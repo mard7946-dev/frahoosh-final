@@ -73,56 +73,34 @@ jobs:
           echo "ANDROID SDK CONFIGURATION"
           echo "=========================================="
 
-          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-$HOME/.buildozer/android/platform/android-sdk}}"
+          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
 
           echo "SDK_ROOT=$SDK_ROOT"
 
           echo "ANDROID_HOME=$SDK_ROOT" >> "$GITHUB_ENV"
           echo "ANDROID_SDK_ROOT=$SDK_ROOT" >> "$GITHUB_ENV"
 
-          mkdir -p "$SDK_ROOT"
-
-          if [ -d "$SDK_ROOT/cmdline-tools/latest/bin" ]; then
-            echo "Found sdkmanager in cmdline-tools/latest/bin"
-          elif [ -f "$SDK_ROOT/cmdline-tools/bin/sdkmanager" ]; then
-            echo "Found sdkmanager in cmdline-tools/bin"
-            mkdir -p "$SDK_ROOT/cmdline-tools/latest"
-            cp -R "$SDK_ROOT/cmdline-tools/bin" "$SDK_ROOT/cmdline-tools/latest/"
-          else
-            echo "Searching for sdkmanager..."
-
-            SDKMANAGER=$(find "$SDK_ROOT" "$HOME/.buildozer" \
-              -type f \
-              -name sdkmanager \
-              2>/dev/null | head -n 1 || true)
-
-            if [ -n "$SDKMANAGER" ]; then
-              echo "Found: $SDKMANAGER"
-
-              SDK_BIN="$(dirname "$SDKMANAGER")"
-
-              mkdir -p "$SDK_ROOT/cmdline-tools/latest"
-
-              cp -R "$SDK_BIN/." "$SDK_ROOT/cmdline-tools/latest/"
-            fi
-          fi
-
           SDKMANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
 
-          if [ ! -x "$SDKMANAGER" ]; then
-            echo "ERROR: sdkmanager was not found."
-            echo "Searching entire runner..."
+          if [ ! -f "$SDKMANAGER" ]; then
+            echo "ERROR: sdkmanager not found at:"
+            echo "$SDKMANAGER"
 
-            find "$HOME" -type f -name sdkmanager 2>/dev/null || true
+            echo "Searching for sdkmanager..."
+            find "$SDK_ROOT" -type f -name sdkmanager 2>/dev/null || true
 
             exit 1
           fi
 
-          chmod +x "$SDKMANAGER"
+          echo "Found sdkmanager:"
+          echo "$SDKMANAGER"
 
           echo "$SDK_ROOT/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
 
-          echo "sdkmanager:"
+          echo "=========================================="
+          echo "SDKMANAGER VERSION"
+          echo "=========================================="
+
           "$SDKMANAGER" --version
 
           echo "=========================================="
