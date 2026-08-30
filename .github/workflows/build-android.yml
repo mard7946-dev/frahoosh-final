@@ -1,0 +1,386 @@
+name: Frahoosh Android Build
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  build:
+    name: Build Frahoosh APK
+    runs-on: ubuntu-22.04
+
+    steps:
+
+      # =========================================================
+      # CHECKOUT
+      # =========================================================
+
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Create runtime configuration
+        shell: bash
+        env:
+          FRAHOOSH_SUPABASE_URL: ${{ secrets.FRAHOOSH_SUPABASE_URL }}
+          FRAHOOSH_SUPABASE_ANON_KEY: ${{ secrets.FRAHOOSH_SUPABASE_ANON_KEY }}
+          FRAHOOSH_SCHOOL_ID: ${{ vars.FRAHOOSH_SCHOOL_ID }}
+          FRAHOOSH_SCHOOL_NAME: ${{ vars.FRAHOOSH_SCHOOL_NAME }}
+          FRAHOOSH_SCHOOL_YEAR: ${{ vars.FRAHOOSH_SCHOOL_YEAR }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          data = {
+              key: os.getenv(key, "")
+              for key in (
+                  "FRAHOOSH_SUPABASE_URL",
+                  "FRAHOOSH_SUPABASE_ANON_KEY",
+                  "FRAHOOSH_SCHOOL_ID",
+                  "FRAHOOSH_SCHOOL_NAME",
+                  "FRAHOOSH_SCHOOL_YEAR",
+              )
+              if os.getenv(key, "")
+          }
+          Path("mobile/runtime_config.json").write_text(
+              json.dumps(data, ensure_ascii=False),
+              encoding="utf-8",
+          )
+          print("Runtime configuration created:", bool(data))
+          print("Supabase URL configured:", bool(data.get("FRAHOOSH_SUPABASE_URL")))
+          print("Supabase key configured:", bool(data.get("FRAHOOSH_SUPABASE_ANON_KEY")))
+          PY
+
+
+      # =========================================================
+      # HOST PYTHON 3.11
+      # =========================================================
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.10"
+          cache: pip
+
+
+      # =========================================================
+      # JAVA 17
+      # =========================================================
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+
+      # =========================================================
+      # SYSTEM DEPENDENCIES
+      # =========================================================
+
+      - name: Install system dependencies
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          sudo apt-get update
+
+          sudo apt-get install -y \
+            build-essential \
+            git \
+            zip \
+            unzip \
+            autoconf \
+            automake \
+            libtool \
+            pkg-config \
+            zlib1g-dev \
+            libncurses5-dev \
+            libncursesw5-dev \
+            libtinfo6 \
+            cmake \
+            libffi-dev \
+            libssl-dev \
+            ccache \
+            autopoint \
+            gettext
+
+
+      # =========================================================
+      # VERIFY HOST ENVIRONMENT
+      # =========================================================
+
+      - name: Verify host environment
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          echo "=========================================="
+          echo "FRAHOOSH BUILD ENVIRONMENT"
+          echo "=========================================="
+
+          python --version
+
+          python - <<'PY'
+          import sys
+
+          print("Python executable:", sys.executable)
+          print("Python version:", sys.version)
+
+          if sys.version_info[:2] != (3, 11):
+              raise SystemExit("ERROR: HOST Python must be 3.11")
+          PY
+
+          java -version
+
+
+      # =========================================================
+      # PYTHON SYNTAX CHECK
+      # =========================================================
+
+      - name: Python syntax check
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          echo "=========================================="
+          echo "PYTHON SYNTAX CHECK"
+          echo "=========================================="
+
+          python -m compileall -q mobile
+
+          echo "=========================================="
+          echo "PYTHON SYNTAX CHECK PASSED"
+          echo "=========================================="
+
+
+      # =========================================================
+      # INSTALL BUILDOZER
+      # =========================================================
+
+      - name: Install Buildozer
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          python -m pip install --upgrade \
+            pip \
+            setuptools \
+            wheel
+
+          python -m pip install \
+            "buildozer==1.5.0" \
+            "cython==0.29.37"
+
+          buildozer --version
+
+
+      # =========================================================
+      # VERIFY PROJECT STRUCTURE
+      # =========================================================
+
+      - name: Verify Frahoosh project
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          echo "=========================================="
+          echo "PROJECT STRUCTURE"
+          echo "=========================================="
+
+          pwd
+
+          echo ""
+          echo "ROOT FILES:"
+          ls -la
+
+          echo ""
+          echo "MOBILE FILES:"
+          find mobile -maxdepth 3 -type f -print
+
+          echo ""
+          echo "CHECKING MAIN.PY..."
+
+          test -f mobile/main.py
+
+          echo "OK: mobile/main.py exists."
+
+
+      # =========================================================
+      # VERIFY BUILDOZER CONFIGURATION
+      # =========================================================
+
+      - name: Verify Buildozer configuration
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          echo "=========================================="
+          echo "BUILDOZER CONFIGURATION"
+          echo "=========================================="
+
+          test -f buildozer.spec
+
+          grep -E \
+            '^(source.dir|requirements|android.api|android.minapi|android.ndk|android.ndk_api|android.archs|p4a.bootstrap|p4a.fork|p4a.branch|p4a.commit)' \
+            buildozer.spec || true
+
+          echo ""
+          echo "CHECKING SOURCE.DIR..."
+
+          grep -q '^source.dir = mobile$' buildozer.spec
+
+          echo "OK: source.dir = mobile"
+
+
+      # =========================================================
+      # CLEAN BUILD
+      # =========================================================
+
+      - name: Clean Build
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          echo "=========================================="
+          echo "CLEANING BUILDOZER"
+          echo "=========================================="
+
+          rm -rf .buildozer
+          rm -rf bin
+
+          echo "Clean complete."
+
+
+      # =========================================================
+      # BUILD APK
+      # =========================================================
+
+      - name: Build Frahoosh APK
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          echo "=========================================="
+          echo "START FRAHOOSH APK BUILD"
+          echo "=========================================="
+
+          export ANDROID_HOME="$HOME/.buildozer/android/platform/android-sdk"
+          export ANDROID_SDK_ROOT="$ANDROID_HOME"
+
+          export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
+
+          echo ""
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+
+          echo ""
+          echo "=========================================="
+          echo "HOST PYTHON"
+          echo "=========================================="
+
+          python --version
+
+          python - <<'PY'
+          import sys
+
+          print("Python executable:", sys.executable)
+          print("Python version:", sys.version)
+
+          if sys.version_info[:2] != (3, 11):
+              raise SystemExit("ERROR: Host Python is not 3.11")
+          PY
+
+          echo ""
+          echo "=========================================="
+          echo "BUILDOZER"
+          echo "=========================================="
+
+          buildozer --version
+
+          echo ""
+          echo "=========================================="
+          echo "JAVA"
+          echo "=========================================="
+
+          java -version
+
+          echo ""
+          echo "=========================================="
+          echo "PROJECT ENTRYPOINT"
+          echo "=========================================="
+
+          test -f mobile/main.py
+
+          echo "mobile/main.py FOUND"
+
+          echo ""
+          echo "=========================================="
+          echo "BUILD CONFIGURATION"
+          echo "=========================================="
+
+          grep -E \
+            '^(source.dir|requirements|android.api|android.minapi|android.ndk|android.ndk_api|android.archs|p4a.bootstrap|p4a.fork|p4a.branch|p4a.commit)' \
+            buildozer.spec || true
+
+          echo ""
+          echo "=========================================="
+          echo "ANDROID SDK LICENSES"
+          echo "=========================================="
+
+          mkdir -p "$ANDROID_HOME/licenses"
+
+          yes | sdkmanager --licenses || true
+
+          echo ""
+          echo "=========================================="
+          echo "BUILD APK"
+          echo "=========================================="
+
+          buildozer -v android debug
+
+          echo ""
+          echo "=========================================="
+          echo "APK SEARCH"
+          echo "=========================================="
+
+          find . \
+            -type f \
+            \( -name "*.apk" -o -name "*.aab" \) \
+            -print
+
+
+      # =========================================================
+      # UPLOAD APK
+      # =========================================================
+
+      - name: Upload APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Frahoosh-Android-APK
+          path: |
+            bin/*.apk
+            bin/*.aab
+          if-no-files-found: error
+
+
+      # =========================================================
+      # UPLOAD BUILD LOG ON FAILURE
+      # =========================================================
+
+      - name: Upload build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Frahoosh-Build-Logs
+          path: |
+            .buildozer/**/*.log
+            .buildozer/android/platform/build-*/build/**/*.log
+          if-no-files-found: ignore
