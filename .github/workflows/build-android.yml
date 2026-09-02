@@ -119,6 +119,8 @@ jobs:
           echo "ACCEPT ANDROID SDK LICENSES"
           echo "=========================================="
 
+          yes | "$SDKMANAGER" --licenses || true
+
           echo "=========================================="
           echo "LICENSE ACCEPTANCE COMPLETE"
           echo "=========================================="
@@ -135,24 +137,22 @@ jobs:
           echo "INSTALL ANDROID SDK COMPONENTS"
           echo "=========================================="
 
-          # IMPORTANT: do not pipe `yes` into package installs.
-          # sdkmanager exits normally after installation, which closes the pipe;
-          # with `set -o pipefail` that makes `yes` report SIGPIPE / Broken pipe
-          # and incorrectly fails the GitHub Actions job.
           "$SDKMANAGER" "platform-tools"
           "$SDKMANAGER" "platforms;android-35"
           "$SDKMANAGER" "build-tools;35.0.0"
           "$SDKMANAGER" "ndk;28.2.13676358"
 
-          # Buildozer/p4a selects the highest installed build-tools version.
-          # Keep the SDK deterministic: only the tested 35.0.0 build-tools remain.
-          find "$SDK_ROOT/build-tools" -mindepth 1 -maxdepth 1 -type d ! -name "35.0.0" -exec rm -rf {} +
+          # Keep only the tested build-tools version.
+          find "$SDK_ROOT/build-tools" \
+            -mindepth 1 \
+            -maxdepth 1 \
+            -type d \
+            ! -name "35.0.0" \
+            -exec rm -rf {} +
 
           test -d "$SDK_ROOT/build-tools/35.0.0"
           test -x "$SDK_ROOT/build-tools/35.0.0/aapt2"
 
-          # Accept licenses again after installing the packages; this covers
-          # licenses introduced by newly installed SDK/NDK components.
           yes | "$SDKMANAGER" --licenses || true
 
           echo "=========================================="
@@ -225,6 +225,7 @@ jobs:
           FRAHOOSH_SCHOOL_ID: ${{ vars.FRAHOOSH_SCHOOL_ID }}
           FRAHOOSH_SCHOOL_NAME: ${{ vars.FRAHOOSH_SCHOOL_NAME }}
           FRAHOOSH_SCHOOL_YEAR: ${{ vars.FRAHOOSH_SCHOOL_YEAR }}
+
         run: |
           set -euxo pipefail
 
@@ -234,14 +235,35 @@ jobs:
           from pathlib import Path
 
           data = {
-              "FRAHOOSH_SUPABASE_URL": os.getenv("FRAHOOSH_SUPABASE_URL", ""),
-              "FRAHOOSH_SUPABASE_ANON_KEY": os.getenv("FRAHOOSH_SUPABASE_ANON_KEY", ""),
-              "FRAHOOSH_SCHOOL_ID": os.getenv("FRAHOOSH_SCHOOL_ID", "frahoosh-school"),
-              "FRAHOOSH_SCHOOL_NAME": os.getenv("FRAHOOSH_SCHOOL_NAME", "دبیرستان سردار شهید حاجی‌زاده ۲"),
-              "FRAHOOSH_SCHOOL_YEAR": os.getenv("FRAHOOSH_SCHOOL_YEAR", "۱۴۰۵ - ۱۴۰۶"),
+              "FRAHOOSH_SUPABASE_URL": os.getenv(
+                  "FRAHOOSH_SUPABASE_URL",
+                  ""
+              ),
+              "FRAHOOSH_SUPABASE_ANON_KEY": os.getenv(
+                  "FRAHOOSH_SUPABASE_ANON_KEY",
+                  ""
+              ),
+              "FRAHOOSH_SCHOOL_ID": os.getenv(
+                  "FRAHOOSH_SCHOOL_ID",
+                  "frahoosh-school"
+              ),
+              "FRAHOOSH_SCHOOL_NAME": os.getenv(
+                  "FRAHOOSH_SCHOOL_NAME",
+                  "دبیرستان سردار شهید حاجی‌زاده ۲"
+              ),
+              "FRAHOOSH_SCHOOL_YEAR": os.getenv(
+                  "FRAHOOSH_SCHOOL_YEAR",
+                  "۱۴۰۵ - ۱۴۰۶"
+              ),
           }
+
           Path("mobile/runtime_config.json").write_text(
-              json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
+              json.dumps(
+                  data,
+                  ensure_ascii=False,
+                  indent=2
+              ),
+              encoding="utf-8"
           )
           PY
 
@@ -251,7 +273,14 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
+
+          echo "=========================================="
+          echo "VALIDATE PYTHON SOURCES"
+          echo "=========================================="
+
           python -m compileall -q mobile
+
+          echo "Python source validation passed."
 
       - name: Build APK
         shell: bash
@@ -277,14 +306,62 @@ jobs:
           echo "Build tools:"
           ls -la "$ANDROIDSDK/build-tools"
 
-          test "$(find "$ANDROIDSDK/build-tools" -mindepth 1 -maxdepth 1 -type d | wc -l)" -eq 1
+          test "$(find "$ANDROIDSDK/build-tools" \
+            -mindepth 1 \
+            -maxdepth 1 \
+            -type d | wc -l)" -eq 1
+
           test -d "$ANDROIDSDK/build-tools/35.0.0"
+          test -x "$ANDROIDSDK/build-tools/35.0.0/aapt2"
 
           echo "Buildozer spec Android settings:"
-          grep -E "^(android\.api|android\.minapi|android\.ndk|android\.ndk_api|android\.skip_update|android\.accept_sdk_license)" buildozer.spec
+          grep -E \
+            "^(android\.api|android\.minapi|android\.ndk|android\.ndk_api|android\.skip_update|android\.accept_sdk_license)" \
+            buildozer.spec
 
           echo "Platforms:"
           ls -la "$ANDROIDSDK/platforms"
+
+          echo "=========================================="
+          echo "REMOVE LEGACY ANDROID SDK TOOLS"
+          echo "=========================================="
+
+          # IMPORTANT:
+          # Old Android SDK tools contain a legacy sdkmanager which is
+          # incompatible with Java 17 because it depends on JAXB classes
+          # such as javax.xml.bind.annotation.XmlSchema.
+          #
+          # python-for-android/buildozer can detect this old directory and
+          # incorrectly select the legacy sdkmanager.
+          #
+          # Removing it forces p4a to use:
+          #
+          # $ANDROIDSDK/cmdline-tools/latest/bin/sdkmanager
+          #
+          if [ -d "$ANDROIDSDK/tools" ]; then
+            echo "Legacy Android SDK tools detected."
+            echo "Removing: $ANDROIDSDK/tools"
+
+            rm -rf "$ANDROIDSDK/tools"
+          else
+            echo "No legacy Android SDK tools directory found."
+          fi
+
+          # Hard verification: the incompatible sdkmanager must not exist.
+          test ! -e "$ANDROIDSDK/tools/bin/sdkmanager"
+
+          echo "Legacy SDK tools successfully removed."
+
+          echo "=========================================="
+          echo "FINAL SDK CHECK"
+          echo "=========================================="
+
+          echo "Modern sdkmanager:"
+          command -v sdkmanager || true
+
+          test -x "$ANDROIDSDK/cmdline-tools/latest/bin/sdkmanager"
+
+          "$ANDROIDSDK/cmdline-tools/latest/bin/sdkmanager" --version
 
           echo "=========================================="
           echo "BUILD APK"
@@ -298,5 +375,4 @@ jobs:
         with:
           name: Frahoosh-APK
           path: bin/*.apk
-          if-no-files-found: error
-
+          if-no-files-found: error          
