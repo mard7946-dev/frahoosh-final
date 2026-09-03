@@ -14,8 +14,7 @@ source.exclude_dirs = bin,.buildozer,.git,__pycache__,tests
 
 version = 1.0.0
 
-requirements = python3==3.11.10,kivy==2.3.1,requests==2.32.3,arabic-reshaper==3.0.0,python-bidi==0.6.6
-
+requirements = python3==3.11.10,hostpython3==3.11.10,kivy==2.3.1,requests==2.32.3,arabic-reshaper==3.0.0,python-bidi==0.6.6
 orientation = portrait
 
 fullscreen = 0
