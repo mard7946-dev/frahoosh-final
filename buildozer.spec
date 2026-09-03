@@ -4,7 +4,7 @@ title = Frahoosh
 package.name = frahoosh
 package.domain = ir.frahoosh
 
-source.dir = mobile
+source.dir = .
 
 source.include_exts = py,png,jpg,jpeg,kv,atlas,json,txt,ttf,otf,ico,svg
 
