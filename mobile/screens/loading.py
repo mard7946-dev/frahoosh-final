@@ -13,27 +13,45 @@ from mobile.config import (
     LOGO_PATH,
     PRIMARY,
     SECONDARY,
+    BACKGROUND,
 )
 
-from mobile.ui import font_name, rtl_text
+from mobile.ui import (
+    font_name,
+    rtl_text,
+)
 
 
 class LoadingScreen(Screen):
 
-    def __init__(self, app_state, **kwargs):
+    def __init__(
+        self,
+        app_state,
+        **kwargs
+    ):
 
         super().__init__(**kwargs)
 
         self.app_state = app_state
         self._finished = False
+        self._worker_started = False
 
         self.add_widget(
             self._build()
         )
 
+        # ---------------------------------------------
+        # حداکثر زمان Loading
+        # ---------------------------------------------
+
         Clock.schedule_once(
             self._start_auth_check,
-            0.65,
+            0.40
+        )
+
+        Clock.schedule_once(
+            self._loading_timeout,
+            8.0
         )
 
     # ========================================================
@@ -45,49 +63,60 @@ class LoadingScreen(Screen):
         root = BoxLayout(
             orientation="vertical",
             padding=dp(28),
-            spacing=dp(12),
+            spacing=dp(12)
         )
 
         root.add_widget(
             BoxLayout(
-                size_hint_y=0.22
+                size_hint_y=0.20
             )
         )
 
-        from pathlib import Path
+        try:
 
-        if Path(LOGO_PATH).exists():
+            from pathlib import Path
 
-            root.add_widget(
-                Image(
-                    source=LOGO_PATH,
-                    size_hint_y=None,
-                    height=dp(150),
-                    allow_stretch=True,
-                    keep_ratio=True,
+            if Path(
+                LOGO_PATH
+            ).exists():
+
+                root.add_widget(
+                    Image(
+                        source=LOGO_PATH,
+                        size_hint_y=None,
+                        height=dp(150),
+                        allow_stretch=True,
+                        keep_ratio=True
+                    )
                 )
-            )
+
+        except Exception:
+            pass
 
         root.add_widget(
             Label(
-                text=rtl_text(APP_NAME),
+                text=rtl_text(
+                    APP_NAME
+                ),
                 font_name=font_name(),
                 font_size="34sp",
                 bold=True,
                 color=PRIMARY,
                 size_hint_y=None,
-                height=dp(60),
+                height=dp(60)
             )
         )
 
         root.add_widget(
             Label(
-                text=rtl_text(SYSTEM_TITLE),
+                text=rtl_text(
+                    SYSTEM_TITLE
+                ),
                 font_name=font_name(),
                 font_size="16sp",
                 color=SECONDARY,
                 size_hint_y=None,
-                height=dp(45),
+                height=dp(45)
             )
         )
 
@@ -99,7 +128,7 @@ class LoadingScreen(Screen):
             font_size="13sp",
             color=SECONDARY,
             size_hint_y=None,
-            height=dp(36),
+            height=dp(36)
         )
 
         root.add_widget(
@@ -115,7 +144,7 @@ class LoadingScreen(Screen):
         return root
 
     # ========================================================
-    # Authentication Check
+    # Authentication
     # ========================================================
 
     def _start_auth_check(self, *_):
@@ -123,13 +152,23 @@ class LoadingScreen(Screen):
         if self._finished:
             return
 
-        self.status.text = rtl_text(
-            "در حال بررسی نشست کاربر..."
-        )
+        if self._worker_started:
+            return
+
+        self._worker_started = True
+
+        try:
+
+            self.status.text = rtl_text(
+                "در حال بررسی نشست کاربر..."
+            )
+
+        except Exception:
+            pass
 
         Thread(
             target=self._auth_worker,
-            daemon=True,
+            daemon=True
         ).start()
 
     # ========================================================
@@ -140,42 +179,43 @@ class LoadingScreen(Screen):
 
         try:
 
-            # ------------------------------------------------
-            # هیچ Sessionای وجود ندارد
-            # ------------------------------------------------
+            state = self.app_state
 
-            if not self.app_state.logged_in:
+            if state is None:
 
-                Clock.schedule_once(
-                    lambda dt:
-                        self._go_login(),
-                    0,
-                )
-
+                self._schedule_login()
                 return
 
             # ------------------------------------------------
-            # Session وجود دارد.
-            #
-            # ابتدا Token فعلی را امتحان می‌کنیم.
-            # اگر API قابلیت بررسی/Refresh داشته باشد،
-            # Refresh انجام می‌شود.
+            # هیچ Session معتبری وجود ندارد
+            # ------------------------------------------------
+
+            if not state.logged_in:
+
+                self._schedule_login()
+                return
+
+            # ------------------------------------------------
+            # Session وجود دارد
             # ------------------------------------------------
 
             refreshed = False
 
             try:
 
+                api = state.api
+
                 if (
-                    self.app_state.api.refresh_token
-                    and hasattr(
-                        self.app_state.api,
-                        "refresh_access_token",
+                    api is not None
+                    and getattr(
+                        api,
+                        "refresh_token",
+                        ""
                     )
                 ):
 
-                    refreshed = (
-                        self.app_state.refresh_session()
+                    refreshed = bool(
+                        state.refresh_session()
                     )
 
             except Exception:
@@ -183,58 +223,61 @@ class LoadingScreen(Screen):
                 refreshed = False
 
             # ------------------------------------------------
-            # اگر Refresh موفق بود → Dashboard
+            # Refresh موفق
             # ------------------------------------------------
 
             if refreshed:
 
-                Clock.schedule_once(
-                    lambda dt:
-                        self._go_dashboard(),
-                    0,
-                )
-
+                self._schedule_dashboard()
                 return
 
             # ------------------------------------------------
-            # اگر Access Token قبلی وجود دارد ولی
-            # Refresh انجام نشد، فعلاً Session را نگه
-            # می‌داریم و Dashboard را باز می‌کنیم.
-            #
-            # درخواست‌های API در صورت 401 باید بعداً
-            # Refresh/Logout را مدیریت کنند.
+            # اگر هنوز Access Token داریم،
+            # فعلاً وارد Dashboard شو.
             # ------------------------------------------------
 
-            if self.app_state.logged_in:
+            if state.logged_in:
 
-                Clock.schedule_once(
-                    lambda dt:
-                        self._go_dashboard(),
-                    0,
-                )
-
+                self._schedule_dashboard()
                 return
 
-            # ------------------------------------------------
-            # Session نامعتبر
-            # ------------------------------------------------
-
-            Clock.schedule_once(
-                lambda dt:
-                    self._go_login(),
-                0,
-            )
+            self._schedule_login()
 
         except Exception:
 
-            Clock.schedule_once(
-                lambda dt:
-                    self._go_login(),
-                0,
-            )
+            self._schedule_login()
 
     # ========================================================
-    # Navigation
+    # Timeout
+    # ========================================================
+
+    def _loading_timeout(self, *_):
+
+        if self._finished:
+            return
+
+        self._schedule_login()
+
+    # ========================================================
+    # Navigation Helpers
+    # ========================================================
+
+    def _schedule_login(self):
+
+        Clock.schedule_once(
+            lambda dt: self._go_login(),
+            0
+        )
+
+    def _schedule_dashboard(self):
+
+        Clock.schedule_once(
+            lambda dt: self._go_dashboard(),
+            0
+        )
+
+    # ========================================================
+    # Dashboard
     # ========================================================
 
     def _go_dashboard(self):
@@ -242,20 +285,43 @@ class LoadingScreen(Screen):
         if self._finished:
             return
 
-        self._finished = True
+        try:
 
-        self.manager.current = (
-            "dashboard"
-        )
+            if self.manager is None:
+                return
+
+            self._finished = True
+
+            self.manager.current = (
+                "dashboard"
+            )
+
+        except Exception:
+
+            self._finished = False
+
+            self._go_login()
+
+    # ========================================================
+    # Login
+    # ========================================================
 
     def _go_login(self):
 
         if self._finished:
             return
 
-        self._finished = True
+        try:
 
-        self.manager.current = (
-            "login"
-        )
+            if self.manager is None:
+                return
 
+            self._finished = True
+
+            self.manager.current = (
+                "login"
+            )
+
+        except Exception:
+            self._finished = True                  
+                    
