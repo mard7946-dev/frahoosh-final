@@ -1,47 +1,95 @@
 import json
+import os
 from pathlib import Path
 
 
 # ============================================================
 # Frahoosh Mobile
-# Session Storage
+# Android-safe Session Storage
 # ============================================================
 
-SESSION_FILE = (
-    Path(__file__).resolve().parent.parent
-    / "storage"
-    / "session.json"
-)
+def _session_file():
+    """
+    محل امن ذخیره Session.
+
+    روی Android نباید کنار سورس برنامه بنویسیم.
+    Kivy App.user_data_dir محل مناسب و قابل نوشتن است.
+    """
+
+    try:
+        from kivy.app import App
+
+        app = App.get_running_app()
+
+        if app is not None:
+            base = Path(app.user_data_dir)
+        else:
+            base = Path.home() / ".frahoosh"
+
+    except Exception:
+        base = Path.home() / ".frahoosh"
+
+    base.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    return base / "session.json"
+
+
+def _atomic_write(path, content):
+    """
+    نوشتن امن Session.
+    """
+
+    temp = path.with_suffix(".tmp")
+
+    try:
+        temp.write_text(
+            content,
+            encoding="utf-8"
+        )
+
+        os.replace(
+            str(temp),
+            str(path)
+        )
+
+        return True
+
+    except OSError:
+
+        try:
+            if temp.exists():
+                temp.unlink()
+        except OSError:
+            pass
+
+        return False
 
 
 def save_session(data: dict):
     """
     ذخیره نشست کاربر.
-
-    اطلاعاتی که از Supabase دریافت می‌شوند،
-    شامل access_token، refresh_token و اطلاعات پروفایل
-    در این فایل ذخیره می‌شوند.
     """
 
     if not isinstance(data, dict):
         return False
 
     try:
-        SESSION_FILE.parent.mkdir(
-            parents=True,
-            exist_ok=True
+
+        session_file = _session_file()
+
+        content = json.dumps(
+            data,
+            ensure_ascii=False,
+            separators=(",", ":")
         )
 
-        SESSION_FILE.write_text(
-            json.dumps(
-                data,
-                ensure_ascii=False,
-                separators=(",", ":")
-            ),
-            encoding="utf-8"
+        return _atomic_write(
+            session_file,
+            content
         )
-
-        return True
 
     except (
         OSError,
@@ -55,17 +103,18 @@ def load_session():
     """
     بازیابی نشست قبلی کاربر.
 
-    اگر فایل وجود نداشته باشد،
-    خراب باشد یا Access Token نداشته باشد،
-    نشست معتبر محسوب نمی‌شود.
+    Session خراب یا بدون Access Token
+    معتبر محسوب نمی‌شود.
     """
 
     try:
 
-        if not SESSION_FILE.exists():
+        session_file = _session_file()
+
+        if not session_file.exists():
             return None
 
-        raw = SESSION_FILE.read_text(
+        raw = session_file.read_text(
             encoding="utf-8"
         )
 
@@ -74,8 +123,11 @@ def load_session():
         if not isinstance(data, dict):
             return None
 
-        # بدون Access Token نشست قابل استفاده نیست.
-        if not data.get("access_token"):
+        access_token = data.get(
+            "access_token"
+        )
+
+        if not access_token:
             return None
 
         return data
@@ -99,15 +151,12 @@ def update_session_tokens(
     token_type=None
 ):
     """
-    به‌روزرسانی Tokenهای نشست بعد از Refresh.
-
-    Session قبلی حفظ می‌شود و فقط اطلاعات Token
-    به‌روزرسانی می‌شوند.
+    به‌روزرسانی Tokenهای نشست.
     """
 
     session = load_session()
 
-    if not session:
+    if not isinstance(session, dict):
         session = {}
 
     if access_token:
@@ -130,15 +179,17 @@ def update_session_tokens(
 
 def clear_session():
     """
-    خروج کامل کاربر و حذف Session ذخیره‌شده.
+    حذف کامل Session.
     """
 
     try:
 
-        if SESSION_FILE.exists():
-            SESSION_FILE.unlink()
+        session_file = _session_file()
+
+        if session_file.exists():
+            session_file.unlink()
 
         return True
 
     except OSError:
-        return False
+        return False          
