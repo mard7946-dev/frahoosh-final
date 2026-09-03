@@ -1,16 +1,31 @@
 from mobile.services.api import SupabaseClient
+
 from mobile.services.session import (
     load_session,
     save_session,
     clear_session,
-    update_session_tokens,
 )
 
 
 class AppState:
 
     def __init__(self):
-        self.api = SupabaseClient()
+
+        self.session = {}
+        self.api = None
+
+        # ---------------------------------------------
+        # API
+        # ---------------------------------------------
+
+        try:
+            self.api = SupabaseClient()
+        except Exception:
+            self.api = None
+
+        # ---------------------------------------------
+        # Session
+        # ---------------------------------------------
 
         try:
             self.session = load_session() or {}
@@ -20,43 +35,54 @@ class AppState:
         self._load_tokens()
 
     # ========================================================
-    # Session / Token
+    # Token
     # ========================================================
 
     def _load_tokens(self):
-        """بارگذاری Tokenها از Session ذخیره‌شده."""
+
+        if self.api is None:
+            return
+
+        session = (
+            self.session
+            if isinstance(self.session, dict)
+            else {}
+        )
 
         self.api.access_token = (
-            self.session.get("access_token", "")
-            if self.session
-            else ""
+            session.get(
+                "access_token",
+                ""
+            )
+            or ""
         )
 
         self.api.refresh_token = (
-            self.session.get("refresh_token", "")
-            if self.session
-            else ""
+            session.get(
+                "refresh_token",
+                ""
+            )
+            or ""
         )
 
         self.api.expires_in = (
-            self.session.get("expires_in")
-            if self.session
-            else None
+            session.get(
+                "expires_in"
+            )
         )
 
         self.api.expires_at = (
-            self.session.get("expires_at")
-            if self.session
-            else None
+            session.get(
+                "expires_at"
+            )
         )
 
         self.api.token_type = (
-            self.session.get(
+            session.get(
                 "token_type",
                 "bearer"
             )
-            if self.session
-            else "bearer"
+            or "bearer"
         )
 
     # ========================================================
@@ -65,8 +91,13 @@ class AppState:
 
     @property
     def logged_in(self):
+
+        if self.api is None:
+            return False
+
         return bool(
-            self.session
+            isinstance(self.session, dict)
+            and self.session
             and self.api.access_token
         )
 
@@ -76,25 +107,45 @@ class AppState:
 
     @property
     def profile(self):
+
+        if not isinstance(
+            self.session,
+            dict
+        ):
+            return {}
+
+        profile = (
+            self.session.get(
+                "profile"
+            )
+            or {}
+        )
+
         return (
-            self.session.get("profile") or {}
-            if self.session
+            profile
+            if isinstance(profile, dict)
             else {}
         )
 
     @property
     def role(self):
+
         return str(
-            self.profile.get("role")
+            self.profile.get(
+                "role"
+            )
             or "student"
         ).strip().lower()
 
     @property
     def display_name(self):
+
+        profile = self.profile
+
         return (
-            self.profile.get("display_name")
-            or self.profile.get("username")
-            or self.profile.get("full_name")
+            profile.get("display_name")
+            or profile.get("username")
+            or profile.get("full_name")
             or "کاربر فراهوش"
         )
 
@@ -104,50 +155,60 @@ class AppState:
 
     def set_session(self, payload):
 
-        payload = payload or {}
-
-        access_token = payload.get(
-            "access_token",
-            ""
+        payload = (
+            payload
+            if isinstance(payload, dict)
+            else {}
         )
 
-        refresh_token = payload.get(
-            "refresh_token",
-            ""
+        access_token = (
+            payload.get(
+                "access_token",
+                ""
+            )
+            or ""
         )
 
         if not access_token:
+
             self.session = {}
-            self.api.access_token = ""
-            self.api.refresh_token = ""
+
+            if self.api is not None:
+                self.api.access_token = ""
+                self.api.refresh_token = ""
+
             clear_session()
+
             return False
 
-        self.session = dict(payload)
+        self.session = dict(
+            payload
+        )
 
-        save_session(
+        saved = save_session(
             self.session
         )
 
         self._load_tokens()
 
-        return True
+        return bool(saved)
 
     # ========================================================
-    # Save Refreshed Token
+    # Persist Refreshed Token
     # ========================================================
 
     def persist_refreshed_token(self):
 
-        """
-        ذخیره Token جدیدی که Supabase بعد از
-        refresh در اختیار برنامه قرار داده است.
-        """
+        if self.api is None:
+            return False
 
         if not self.api.access_token:
             return False
 
-        if not self.session:
+        if not isinstance(
+            self.session,
+            dict
+        ):
             self.session = {}
 
         self.session["access_token"] = (
@@ -179,21 +240,25 @@ class AppState:
         )
 
     # ========================================================
-    # Refresh Session
+    # Refresh
     # ========================================================
 
     def refresh_session(self):
 
-        """
-        تلاش برای تمدید نشست با Refresh Token.
-        """
+        if self.api is None:
+            return False
 
         if not self.api.refresh_token:
             return False
 
-        refreshed = (
-            self.api.refresh_access_token()
-        )
+        try:
+
+            refreshed = (
+                self.api.refresh_access_token()
+            )
+
+        except Exception:
+            return False
 
         if not refreshed:
             return False
@@ -206,19 +271,21 @@ class AppState:
 
     def logout(self):
 
-        try:
-            self.api.sign_out()
-        except Exception:
-            pass
+        if self.api is not None:
+
+            try:
+                self.api.sign_out()
+            except Exception:
+                pass
+
+            self.api.access_token = ""
+            self.api.refresh_token = ""
+            self.api.expires_in = None
+            self.api.expires_at = None
+            self.api.token_type = "bearer"
 
         clear_session()
 
         self.session = {}
-
-        self.api.access_token = ""
-        self.api.refresh_token = ""
-        self.api.expires_in = None
-        self.api.expires_at = None
-        self.api.token_type = "bearer"
 
         return True
