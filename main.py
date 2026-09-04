@@ -22,16 +22,24 @@ class FrahooshMobileApp(App):
 
         try:
             register_fonts()
+            print("FONT OK")
         except Exception as e:
             print("FONT ERROR:", e)
 
+
         try:
+            self.state = AppState()
+            print("APP STATE OK")
+
+        except Exception as e:
+            print("APP STATE ERROR:", e)
             self.state = None
-            print("APP STATE DISABLED FOR TEST")
+
 
         manager = ScreenManager(
             transition=FadeTransition(duration=0.12)
         )
+
 
         screens = [
             ("login", LoginScreen),
@@ -40,23 +48,35 @@ class FrahooshMobileApp(App):
             ("update", UpdateScreen),
         ]
 
+
         for name, screen_class in screens:
+
             try:
-                manager.add_widget(
-                    screen_class(
-                        self.state,
-                        name=name
-                    )
+
+                screen = screen_class(
+                    self.state,
+                    name=name
                 )
+
+                manager.add_widget(screen)
+
                 print("SCREEN OK:", name)
 
+
             except Exception as e:
-                print("SCREEN ERROR:", name, e)
+
+                print(
+                    "SCREEN ERROR:",
+                    name,
+                    e
+                )
+
 
         manager.current = "login"
 
         return manager
 
 
+
 if __name__ == "__main__":
-    FrahooshMobileApp().run()           
+    FrahooshMobileApp().run()
