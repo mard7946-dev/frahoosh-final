@@ -13,37 +13,42 @@ class FrahooshMobileApp(App):
 
         Window.clearcolor = (0.965, 0.975, 0.985, 1)
 
-        # ثبت فونت قبل از ساخت Login
+        # فونت
         try:
             register_fonts()
             print("FRAHOOSH: FONT OK")
         except Exception as e:
             print("FRAHOOSH: FONT ERROR:", repr(e))
 
-        manager = ScreenManager()
-
-        # فقط Login
-        from mobile.screens.login import LoginScreen
-
+        # ساخت وضعیت برنامه
         try:
-            login = LoginScreen(None, name="login")
-            manager.add_widget(login)
-            manager.current = "login"
+            from mobile.services.app_state import AppState
 
-            print("FRAHOOSH: LOGIN OK")
+            self.state = AppState()
+
+            if self.state.api is None:
+                print("FRAHOOSH: API NOT CREATED")
+            else:
+                print("FRAHOOSH: APP STATE OK")
 
         except Exception as e:
-            print("FRAHOOSH: LOGIN ERROR:", repr(e))
+            print("FRAHOOSH: APP STATE ERROR:", repr(e))
+            self.state = None
 
-            # صفحه اضطراری برای جلوگیری از خروج بی‌صدا
-            from kivy.uix.label import Label
+        manager = ScreenManager()
 
-            manager.add_widget(
-                Label(
-                    text="Frahoosh\nLogin startup error",
-                    font_size="22sp"
-                )
-            )
+        # Login
+        from mobile.screens.login import LoginScreen
+
+        login = LoginScreen(
+            self.state,
+            name="login"
+        )
+
+        manager.add_widget(login)
+        manager.current = "login"
+
+        print("FRAHOOSH: LOGIN OK")
 
         return manager
 
