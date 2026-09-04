@@ -18,75 +18,47 @@ class FrahooshMobileApp(App):
 
     def build(self):
 
-        # پس زمینه برنامه
         Window.clearcolor = BACKGROUND
 
-        # ثبت فونت
         try:
             register_fonts()
-        except Exception:
-            pass
+        except Exception as e:
+            print("FONT ERROR:", e)
 
-
-        # ساخت وضعیت برنامه
         try:
             self.state = AppState()
-
-        except Exception:
+        except Exception as e:
+            print("STATE ERROR:", e)
             self.state = None
 
-
-        # مدیریت صفحات
         manager = ScreenManager(
-            transition=FadeTransition(
-                duration=0.12
-            )
+            transition=FadeTransition(duration=0.12)
         )
 
+        screens = [
+            ("login", LoginScreen),
+            ("dashboard", DashboardScreen),
+            ("module", ModuleScreen),
+            ("update", UpdateScreen),
+        ]
 
-        # ورود
-        manager.add_widget(
-            LoginScreen(
-                self.state,
-                name="login"
-            )
-        )
+        for name, screen_class in screens:
+            try:
+                manager.add_widget(
+                    screen_class(
+                        self.state,
+                        name=name
+                    )
+                )
+                print("SCREEN OK:", name)
 
+            except Exception as e:
+                print("SCREEN ERROR:", name, e)
 
-        # داشبورد
-        manager.add_widget(
-            DashboardScreen(
-                self.state,
-                name="dashboard"
-            )
-        )
-
-
-        # ماژول ها
-        manager.add_widget(
-            ModuleScreen(
-                self.state,
-                name="module"
-            )
-        )
-
-
-        # بروزرسانی
-        manager.add_widget(
-            UpdateScreen(
-                self.state,
-                name="update"
-            )
-        )
-
-
-        # شروع برنامه
         manager.current = "login"
-
 
         return manager
 
 
-
 if __name__ == "__main__":
-    FrahooshMobileApp().run()
+    FrahooshMobileApp().run()           
