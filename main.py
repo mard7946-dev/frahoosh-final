@@ -13,47 +13,38 @@ from mobile.screens.update import UpdateScreen
 
 
 class FrahooshMobileApp(App):
-    """
-    نقطه ورود اصلی اپلیکیشن فراهوش.
-
-    ترتیب اجرای برنامه:
-        1. راه‌اندازی محیط Kivy
-        2. ثبت فونت
-        3. ایجاد وضعیت برنامه
-        4. نمایش مستقیم صفحه ورود
-
-    LoadingScreen عمداً از مسیر startup حذف شده است تا قبل از
-    نمایش Login هیچ Thread یا عملیات شبکه‌ای اجرا نشود.
-    """
 
     title = APP_NAME
 
     def build(self):
-        # رنگ پس‌زمینه اصلی برنامه
+
+        # پس زمینه برنامه
         Window.clearcolor = BACKGROUND
 
-        # ثبت فونت؛ در صورت بروز مشکل فونت، خود برنامه نباید Crash کند.
+        # ثبت فونت
         try:
             register_fonts()
         except Exception:
             pass
 
-        # ایجاد وضعیت برنامه
-        #
-        # AppState در حالت عادی باید بدون خطا ساخته شود.
-        # اگر به هر دلیل مقداردهی اولیه آن با مشکل مواجه شد،
-        # LoginScreen همچنان باید قابل نمایش باشد.
+
+        # ساخت وضعیت برنامه
         try:
             self.state = AppState()
+
         except Exception:
             self.state = None
 
-        # ایجاد ScreenManager
+
+        # مدیریت صفحات
         manager = ScreenManager(
-            transition=FadeTransition(duration=0.12)
+            transition=FadeTransition(
+                duration=0.12
+            )
         )
 
-        # صفحه ورود، اولین صفحه واقعی برنامه است.
+
+        # ورود
         manager.add_widget(
             LoginScreen(
                 self.state,
@@ -61,7 +52,8 @@ class FrahooshMobileApp(App):
             )
         )
 
-        # داشبورد پس از ورود موفق
+
+        # داشبورد
         manager.add_widget(
             DashboardScreen(
                 self.state,
@@ -69,7 +61,8 @@ class FrahooshMobileApp(App):
             )
         )
 
-        # صفحه ماژول‌ها
+
+        # ماژول ها
         manager.add_widget(
             ModuleScreen(
                 self.state,
@@ -77,7 +70,8 @@ class FrahooshMobileApp(App):
             )
         )
 
-        # صفحه بروزرسانی
+
+        # بروزرسانی
         manager.add_widget(
             UpdateScreen(
                 self.state,
@@ -85,10 +79,13 @@ class FrahooshMobileApp(App):
             )
         )
 
-        # برنامه مستقیماً با Login شروع می‌شود.
+
+        # شروع برنامه
         manager.current = "login"
 
+
         return manager
+
 
 
 if __name__ == "__main__":
