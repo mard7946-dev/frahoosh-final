@@ -26,10 +26,8 @@ class FrahooshMobileApp(App):
             print("FONT ERROR:", e)
 
         try:
-            self.state = AppState()
-        except Exception as e:
-            print("STATE ERROR:", e)
             self.state = None
+            print("APP STATE DISABLED FOR TEST")
 
         manager = ScreenManager(
             transition=FadeTransition(duration=0.12)
