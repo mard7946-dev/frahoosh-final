@@ -3,7 +3,6 @@ from kivy.core.window import Window
 from kivy.uix.screenmanager import ScreenManager, FadeTransition
 
 from mobile.config import APP_NAME, BACKGROUND
-from mobile.services.app_state import AppState
 from mobile.ui import register_fonts
 
 from mobile.screens.login import LoginScreen
@@ -20,63 +19,156 @@ class FrahooshMobileApp(App):
 
         Window.clearcolor = BACKGROUND
 
+        # -------------------------------------------------
+        # فونت
+        # -------------------------------------------------
         try:
             register_fonts()
-            print("FONT OK")
+            print("FRAHOOSH: FONT OK")
         except Exception as e:
-            print("FONT ERROR:", e)
+            print("FRAHOOSH: FONT ERROR:", repr(e))
 
-
+        # -------------------------------------------------
+        # AppState
+        # -------------------------------------------------
         try:
+            from mobile.services.app_state import AppState
+
             self.state = AppState()
-            print("APP STATE OK")
+
+            print("FRAHOOSH: APP STATE OK")
 
         except Exception as e:
-            print("APP STATE ERROR:", e)
+
+            print(
+                "FRAHOOSH: APP STATE ERROR:",
+                repr(e)
+            )
+
             self.state = None
 
-
+        # -------------------------------------------------
+        # ScreenManager
+        # -------------------------------------------------
         manager = ScreenManager(
             transition=FadeTransition(duration=0.12)
         )
 
+        # -------------------------------------------------
+        # LOGIN
+        # Login باید همیشه ساخته شود
+        # -------------------------------------------------
+        try:
 
-        screens = [
-            ("login", LoginScreen),
-            ("dashboard", DashboardScreen),
-            ("module", ModuleScreen),
-            ("update", UpdateScreen),
-        ]
+            login = LoginScreen(
+                self.state,
+                name="login"
+            )
 
+            manager.add_widget(login)
 
-        for name, screen_class in screens:
+            print("FRAHOOSH: LOGIN OK")
+
+        except Exception as e:
+
+            print(
+                "FRAHOOSH: LOGIN ERROR:",
+                repr(e)
+            )
+
+        # -------------------------------------------------
+        # Dashboard
+        # فقط اگر AppState سالم باشد
+        # -------------------------------------------------
+        if self.state is not None:
 
             try:
 
-                screen = screen_class(
+                dashboard = DashboardScreen(
                     self.state,
-                    name=name
+                    name="dashboard"
                 )
 
-                manager.add_widget(screen)
+                manager.add_widget(dashboard)
 
-                print("SCREEN OK:", name)
-
+                print("FRAHOOSH: DASHBOARD OK")
 
             except Exception as e:
 
                 print(
-                    "SCREEN ERROR:",
-                    name,
-                    e
+                    "FRAHOOSH: DASHBOARD ERROR:",
+                    repr(e)
                 )
 
+        # -------------------------------------------------
+        # Module
+        # -------------------------------------------------
+        if self.state is not None:
 
-        manager.current = "login"
+            try:
+
+                module = ModuleScreen(
+                    self.state,
+                    name="module"
+                )
+
+                manager.add_widget(module)
+
+                print("FRAHOOSH: MODULE OK")
+
+            except Exception as e:
+
+                print(
+                    "FRAHOOSH: MODULE ERROR:",
+                    repr(e)
+                )
+
+        # -------------------------------------------------
+        # Update
+        # -------------------------------------------------
+        if self.state is not None:
+
+            try:
+
+                update = UpdateScreen(
+                    self.state,
+                    name="update"
+                )
+
+                manager.add_widget(update)
+
+                print("FRAHOOSH: UPDATE OK")
+
+            except Exception as e:
+
+                print(
+                    "FRAHOOSH: UPDATE ERROR:",
+                    repr(e)
+                )
+
+        # -------------------------------------------------
+        # شروع مستقیم از Login
+        # -------------------------------------------------
+        if manager.has_screen("login"):
+
+            manager.current = "login"
+
+            print("FRAHOOSH: START LOGIN")
 
         return manager
 
 
-
 if __name__ == "__main__":
-    FrahooshMobileApp().run()
+    try:
+
+        FrahooshMobileApp().run()
+
+    except Exception as e:
+
+        print(
+            "FRAHOOSH: FATAL ERROR:",
+            repr(e)
+        )
+
+        raise
+                
