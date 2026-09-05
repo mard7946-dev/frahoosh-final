@@ -258,7 +258,9 @@ class LoginScreen(Screen):
             "در حال ورود..."
         )
 
-
+        نام کاربری: admin
+        1234:رمز   
+        
         Thread(
             target=self._login_worker,
 
