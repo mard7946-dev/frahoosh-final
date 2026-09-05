@@ -168,26 +168,16 @@ class LoginScreen(Screen):
         )
 
 
-        root.add_widget(
-            self.identifier
-        )
+        root.add_widget(self.identifier)
 
-        root.add_widget(
-            self.password
-        )
+        root.add_widget(self.password)
 
-        root.add_widget(
-            self.status
-        )
+        root.add_widget(self.status)
 
-        root.add_widget(
-            self.login_button
-        )
+        root.add_widget(self.login_button)
 
 
         self.add_widget(root)
-
-
 
     # ==========================
     # LOGIN
@@ -216,7 +206,6 @@ class LoginScreen(Screen):
             return
 
 
-
         if self.app_state is None:
 
             self._set_status(
@@ -226,6 +215,42 @@ class LoginScreen(Screen):
 
             return
 
+
+        # ==========================
+        # LOCAL TEST LOGIN
+        # ==========================
+
+        if identifier == "admin" and password == "1234":
+
+            self.app_state.role = "manager"
+
+            self.app_state.display_name = (
+                "مدیر فراهوش"
+            )
+
+
+            self._busy = False
+
+            self.login_button.disabled = False
+
+
+            self.login_button.text = rtl_text(
+                "ورود به فراهوش"
+            )
+
+
+            self.manager.current = (
+                "dashboard"
+            )
+
+
+            return
+
+
+
+        # ==========================
+        # SUPABASE LOGIN
+        # ==========================
 
 
         if self.app_state.api is None:
@@ -252,24 +277,29 @@ class LoginScreen(Screen):
 
         self._busy = True
 
+
         self.login_button.disabled = True
+
 
         self.login_button.text = rtl_text(
             "در حال ورود..."
         )
 
-        نام کاربری: admin
-        1234:رمز   
-        
+
         Thread(
+
             target=self._login_worker,
 
             args=(
+
                 identifier,
+
                 password,
+
             ),
 
             daemon=True,
+
         ).start()
 
 
@@ -334,6 +364,7 @@ class LoginScreen(Screen):
 
 
             self._busy = False
+
 
             self.login_button.disabled = False
 
@@ -420,6 +451,7 @@ class LoginScreen(Screen):
 
         self.status.color = color
 
+
         self.status.text = rtl_text(
             message
-        )
+            )
