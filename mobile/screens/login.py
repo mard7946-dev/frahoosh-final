@@ -84,19 +84,13 @@ class LoginScreen(Screen):
 
 
         self.identifier = PersianTextInput(
-
             hint_text=rtl_text(
                 "نام کاربری / ایمیل"
             ),
-
             multiline=False,
-
             size_hint_y=None,
-
             height=dp(52),
-
             halign="right",
-
             padding=[
                 dp(12),
                 dp(12)
@@ -105,21 +99,14 @@ class LoginScreen(Screen):
 
 
         self.password = PersianTextInput(
-
             hint_text=rtl_text(
                 "رمز عبور"
             ),
-
             password=True,
-
             multiline=False,
-
             size_hint_y=None,
-
             height=dp(52),
-
             halign="right",
-
             padding=[
                 dp(12),
                 dp(12)
@@ -128,37 +115,24 @@ class LoginScreen(Screen):
 
 
         self.status = Label(
-
             text="",
-
             font_name=font_name(),
-
             font_size="12sp",
-
             color=SECONDARY,
-
             size_hint_y=None,
-
             height=dp(45),
         )
 
 
         self.login_button = Button(
-
             text=rtl_text(
                 "ورود به فراهوش"
             ),
-
             font_name=font_name(),
-
             background_normal="",
-
             background_color=SUCCESS,
-
             color=WHITE,
-
             size_hint_y=None,
-
             height=dp(54),
         )
 
@@ -169,11 +143,8 @@ class LoginScreen(Screen):
 
 
         root.add_widget(self.identifier)
-
         root.add_widget(self.password)
-
         root.add_widget(self.status)
-
         root.add_widget(self.login_button)
 
 
@@ -189,10 +160,7 @@ class LoginScreen(Screen):
             return
 
 
-        identifier = (
-            self.identifier.text.strip()
-        )
-
+        identifier = self.identifier.text.strip()
         password = self.password.text
 
 
@@ -222,27 +190,47 @@ class LoginScreen(Screen):
 
         if identifier == "admin" and password == "1234":
 
-            self.app_state.role = "manager"
+            try:
 
-            self.app_state.display_name = (
-                "مدیر فراهوش"
-            )
-
-
-            self._busy = False
-
-            self.login_button.disabled = False
-
-
-            self.login_button.text = rtl_text(
-                "ورود به فراهوش"
-            )
+                test_session = {
+                    "user": {
+                        "id": "local-admin",
+                        "username": "admin",
+                        "role": "manager",
+                        "display_name": "مدیر فراهوش"
+                    },
+                    "token": "local-test-token"
+                }
 
 
-            self.manager.current = (
-                "dashboard"
-            )
+                if hasattr(
+                    self.app_state,
+                    "set_session"
+                ):
 
+                    self.app_state.set_session(
+                        test_session
+                    )
+
+
+                else:
+
+                    self.app_state.session = (
+                        test_session
+                    )
+
+
+            except Exception as exc:
+
+                print(
+                    "LOCAL SESSION ERROR:",
+                    repr(exc)
+                )
+
+
+            self.password.text = ""
+
+            self._open_dashboard()
 
             return
 
@@ -253,7 +241,10 @@ class LoginScreen(Screen):
         # ==========================
 
 
-        if self.app_state.api is None:
+        if not hasattr(
+            self.app_state,
+            "api"
+        ) or self.app_state.api is None:
 
             self._set_status(
                 "سرویس اتصال به سرور ایجاد نشد.",
@@ -261,7 +252,6 @@ class LoginScreen(Screen):
             )
 
             return
-
 
 
         if not self.app_state.api.configured:
@@ -274,12 +264,9 @@ class LoginScreen(Screen):
             return
 
 
-
         self._busy = True
 
-
         self.login_button.disabled = True
-
 
         self.login_button.text = rtl_text(
             "در حال ورود..."
@@ -287,22 +274,67 @@ class LoginScreen(Screen):
 
 
         Thread(
-
             target=self._login_worker,
-
             args=(
-
                 identifier,
-
                 password,
-
             ),
-
             daemon=True,
-
         ).start()
 
 
+
+    def _open_dashboard(self):
+
+        try:
+
+            if not self.manager.has_screen(
+                "dashboard"
+            ):
+
+                from mobile.screens.dashboard import (
+                    DashboardScreen
+                )
+
+
+                self.manager.add_widget(
+                    DashboardScreen(
+                        self.app_state,
+                        name="dashboard"
+                    )
+                )
+
+
+            dashboard = (
+                self.manager.get_screen(
+                    "dashboard"
+                )
+            )
+
+
+            try:
+
+                dashboard.refresh()
+
+            except Exception as exc:
+
+                print(
+                    "DASHBOARD REFRESH ERROR:",
+                    repr(exc)
+                )
+
+
+            self.manager.current = (
+                "dashboard"
+            )
+
+
+        except Exception as exc:
+
+            self._set_status(
+                str(exc),
+                ERROR
+            )
 
     def _login_worker(
         self,
@@ -321,28 +353,26 @@ class LoginScreen(Screen):
 
 
             Clock.schedule_once(
-
                 lambda dt:
                 self._login_success(result),
-
                 0
             )
 
 
         except Exception as exc:
 
-
             Clock.schedule_once(
-
                 lambda dt, msg=str(exc):
                 self._login_failed(msg),
-
                 0
             )
 
 
 
-    def _login_success(self, payload):
+    def _login_success(
+        self,
+        payload
+    ):
 
         try:
 
@@ -365,59 +395,14 @@ class LoginScreen(Screen):
 
             self._busy = False
 
-
             self.login_button.disabled = False
-
 
             self.login_button.text = rtl_text(
                 "ورود به فراهوش"
             )
 
 
-
-            if not self.manager.has_screen(
-                "dashboard"
-            ):
-
-
-                from mobile.screens.dashboard import (
-                    DashboardScreen
-                )
-
-
-                self.manager.add_widget(
-
-                    DashboardScreen(
-
-                        self.app_state,
-
-                        name="dashboard"
-
-                    )
-
-                )
-
-
-
-            dashboard = (
-                self.manager.get_screen(
-                    "dashboard"
-                )
-            )
-
-
-            try:
-
-                dashboard.refresh()
-
-            except Exception as exc:
-
-                print(
-                      ‌"DASHBOARD REFRESH ERROR:",
-                )
-
-
-self.manager.current = "dashboard"
+            self._open_dashboard()
 
 
 
@@ -429,7 +414,10 @@ self.manager.current = "dashboard"
 
 
 
-    def _login_failed(self, message):
+    def _login_failed(
+        self,
+        message
+    ):
 
         self._busy = False
 
@@ -457,7 +445,6 @@ self.manager.current = "dashboard"
 
         self.status.color = color
 
-
         self.status.text = rtl_text(
             message
-            )
+        )
