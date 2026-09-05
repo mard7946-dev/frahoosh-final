@@ -15,8 +15,7 @@ def register_fonts():
     global _FONT_READY
 
     if _FONT_READY:
-        return FONT_REGULAR
-
+        return "Frahoosh"
 
     LabelBase.register(
         name="Frahoosh",
@@ -42,25 +41,17 @@ class PersianTextInput(TextInput):
 
         register_fonts()
 
-        kwargs.setdefault(
-            "font_name",
-            "Frahoosh"
+        super().__init__(
+            font_name="Frahoosh",
+            halign="right",
+            multiline=False,
+            **kwargs
         )
 
-        kwargs.setdefault(
-            "halign",
-            "right"
-        )
-
-        kwargs.setdefault(
-            "cursor_width",
-            2
-        )
-
-        super().__init__(**kwargs)
+        self.cursor_width = 2
 
 
 
 def rtl_text(text):
 
-    return text[::-1]    
+    return text
