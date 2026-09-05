@@ -7,7 +7,6 @@ from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
 from kivy.uix.button import Button
 from kivy.metrics import dp
-from kivy.app import App
 
 from mobile.config import (
     APP_NAME,
@@ -39,6 +38,7 @@ class LoginScreen(Screen):
             spacing=dp(10),
         )
 
+        # عنوان برنامه
         root.add_widget(
             Label(
                 text=rtl_text(APP_NAME),
@@ -48,9 +48,12 @@ class LoginScreen(Screen):
                 color=PRIMARY,
                 size_hint_y=None,
                 height=dp(52),
+                halign="center",
+                valign="middle",
             )
         )
 
+        # عنوان سامانه
         root.add_widget(
             Label(
                 text=rtl_text(SYSTEM_TITLE),
@@ -59,9 +62,12 @@ class LoginScreen(Screen):
                 color=SECONDARY,
                 size_hint_y=None,
                 height=dp(40),
+                halign="center",
+                valign="middle",
             )
         )
 
+        # نام مدرسه
         root.add_widget(
             Label(
                 text=rtl_text(SCHOOL_NAME),
@@ -70,26 +76,35 @@ class LoginScreen(Screen):
                 color=PRIMARY,
                 size_hint_y=None,
                 height=dp(34),
+                halign="center",
+                valign="middle",
             )
         )
 
+        # نام کاربری / ایمیل
         self.identifier = TextInput(
-            hint_text=rtl_text("نام کاربری / ایمیل"),
+            hint_text="نام کاربری / ایمیل",
             font_name=font_name(),
             multiline=False,
             size_hint_y=None,
             height=dp(52),
+            halign="right",
+            padding=[dp(12), dp(12)],
         )
 
+        # رمز عبور
         self.password = TextInput(
-            hint_text=rtl_text("رمز عبور"),
+            hint_text="رمز عبور",
             font_name=font_name(),
             password=True,
             multiline=False,
             size_hint_y=None,
             height=dp(52),
+            halign="right",
+            padding=[dp(12), dp(12)],
         )
 
+        # پیام وضعیت
         self.status = Label(
             text="",
             font_name=font_name(),
@@ -97,8 +112,16 @@ class LoginScreen(Screen):
             color=SECONDARY,
             size_hint_y=None,
             height=dp(45),
+            halign="center",
+            valign="middle",
         )
 
+        self.status.bind(
+            size=lambda instance, value:
+            setattr(instance, "text_size", value)
+        )
+
+        # دکمه ورود
         self.login_button = Button(
             text=rtl_text("ورود به فراهوش"),
             font_name=font_name(),
@@ -109,7 +132,9 @@ class LoginScreen(Screen):
             height=dp(54),
         )
 
-        self.login_button.bind(on_release=self.login)
+        self.login_button.bind(
+            on_release=self.login
+        )
 
         root.add_widget(self.identifier)
         root.add_widget(self.password)
@@ -156,7 +181,9 @@ class LoginScreen(Screen):
 
         self._busy = True
         self.login_button.disabled = True
-        self.login_button.text = rtl_text("در حال ورود...")
+        self.login_button.text = rtl_text(
+            "در حال ورود..."
+        )
 
         Thread(
             target=self._login_worker,
@@ -174,7 +201,8 @@ class LoginScreen(Screen):
             )
 
             Clock.schedule_once(
-                lambda dt: self._login_success(result),
+                lambda dt:
+                self._login_success(result),
                 0
             )
 
@@ -192,7 +220,9 @@ class LoginScreen(Screen):
 
         try:
 
-            saved = self.app_state.set_session(payload)
+            saved = self.app_state.set_session(
+                payload
+            )
 
             if not saved:
                 raise Exception(
@@ -207,9 +237,13 @@ class LoginScreen(Screen):
                 "ورود به فراهوش"
             )
 
-            if not self.manager.has_screen("dashboard"):
+            if not self.manager.has_screen(
+                "dashboard"
+            ):
 
-                from mobile.screens.dashboard import DashboardScreen
+                from mobile.screens.dashboard import (
+                    DashboardScreen
+                )
 
                 self.manager.add_widget(
                     DashboardScreen(
@@ -218,14 +252,19 @@ class LoginScreen(Screen):
                     )
                 )
 
-            dashboard = self.manager.get_screen("dashboard")
+            dashboard = self.manager.get_screen(
+                "dashboard"
+            )
+
             dashboard.refresh()
 
             self.manager.current = "dashboard"
 
         except Exception as exc:
 
-            self._login_failed(str(exc))
+            self._login_failed(
+                str(exc)
+            )
 
     def _login_failed(self, message):
 
@@ -248,5 +287,4 @@ class LoginScreen(Screen):
 
         self.status.text = rtl_text(
             message
-        )
-        
+        )                          
