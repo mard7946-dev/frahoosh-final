@@ -3,6 +3,7 @@ from pathlib import Path
 from kivy.core.text import LabelBase
 from kivy.graphics import Color, RoundedRectangle, Line
 from kivy.uix.widget import Widget
+from kivy.uix.textinput import TextInput
 
 from mobile.config import FONT_REGULAR, FONT_BOLD, CARD, BORDER
 
@@ -21,34 +22,41 @@ def register_fonts():
 
     if not regular.is_file():
         print("FONT FILE NOT FOUND:", regular)
-        return ""
+        return "Roboto"
 
     try:
         LabelBase.register(
             name="Frahoosh",
             fn_regular=str(regular),
-            fn_bold=str(bold if bold.is_file() else regular),
+            fn_bold=str(
+                bold if bold.is_file()
+                else regular
+            ),
         )
 
         _FONT_REGISTERED = True
+
         return "Frahoosh"
 
     except Exception as exc:
-        print("FONT REGISTER ERROR:", repr(exc))
-        return ""
+
+        print(
+            "FONT REGISTER ERROR:",
+            repr(exc)
+        )
+
+        return "Roboto"
 
 
 def font_name():
-    if register_fonts():
-        return "Frahoosh"
 
-    return "Roboto"
+    return register_fonts()
 
 
 def rtl_text(value):
+
     text = str(value or "")
 
-    # Persian/Arabic character normalization
     text = text.replace("ي", "ی")
     text = text.replace("ى", "ی")
     text = text.replace("ك", "ک")
@@ -56,6 +64,7 @@ def rtl_text(value):
     text = text.replace("ة", "ه")
 
     try:
+
         import arabic_reshaper
         from bidi.algorithm import get_display
 
@@ -63,14 +72,38 @@ def rtl_text(value):
 
         return get_display(reshaped)
 
-    except Exception as exc:
-        print("RTL RENDER ERROR:", repr(exc))
+    except Exception:
+
         return text
+
+
+
+class PersianTextInput(TextInput):
+
+    def __init__(self, **kwargs):
+
+        kwargs.setdefault(
+            "font_name",
+            font_name()
+        )
+
+        kwargs.setdefault(
+            "halign",
+            "right"
+        )
+
+        super().__init__(**kwargs)
+
 
 
 class Card(Widget):
 
-    def __init__(self, radius=18, **kwargs):
+    def __init__(
+        self,
+        radius=18,
+        **kwargs
+    ):
+
         super().__init__(**kwargs)
 
         with self.canvas.before:
@@ -101,6 +134,7 @@ class Card(Widget):
             size=self._sync,
         )
 
+
     def _sync(self, *_):
 
         self._rect.pos = self.pos
@@ -115,4 +149,4 @@ class Card(Widget):
             self.height,
             r,
         )
-
+    
