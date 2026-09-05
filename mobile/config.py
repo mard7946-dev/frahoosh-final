@@ -82,6 +82,12 @@ SUPABASE_ANON_KEY = _setting(
     ""
 )
 
+print("SUPABASE URL:", SUPABASE_URL)
+print(
+    "SUPABASE KEY:",
+    "OK" if SUPABASE_ANON_KEY else "EMPTY"
+)
+
 
 
 SCHOOL_ID = _setting(
