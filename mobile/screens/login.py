@@ -414,7 +414,6 @@ class LoginScreen(Screen):
 
                 print(
                       ‌"DASHBOARD REFRESH ERROR:",
-                      repr(exc)
                 )
 
 
