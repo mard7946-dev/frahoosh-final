@@ -408,13 +408,13 @@ class LoginScreen(Screen):
 
             try:
 
-                 dashboard.refresh()
+                dashboard.refresh()
 
             except Exception as exc:
 
-                 print(
-                      ‌ "DASHBOARD REFRESH ERROR:",
-                         repr(exc)
+                print(
+                      ‌"DASHBOARD REFRESH ERROR:",
+                      repr(exc)
                 )
 
 
