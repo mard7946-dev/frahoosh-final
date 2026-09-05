@@ -406,12 +406,19 @@ class LoginScreen(Screen):
             )
 
 
-            dashboard.refresh()
+            try:
+
+                 dashboard.refresh()
+
+            except Exception as exc:
+
+                 print(
+                      ‌ "DASHBOARD REFRESH ERROR:",
+                         repr(exc)
+                )
 
 
-            self.manager.current = (
-                "dashboard"
-            )
+self.manager.current = "dashboard"
 
 
 
