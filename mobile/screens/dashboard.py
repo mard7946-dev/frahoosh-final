@@ -334,28 +334,49 @@ class DashboardScreen(Screen):
 
         self.grid.add_widget(logout)
 
-    def open_module(self, title, key):
+        def open_module(self, title, key):
+
+        # ==========================
+        # MANAGEMENT PANEL
+        # ==========================
 
         if key == "school":
 
-            if not self.manager.has_screen("school"):
+            if not self.manager.has_screen(
+                "management"
+            ):
 
-                from mobile.screens.school import SchoolScreen
+                from mobile.screens.management import (
+                    ManagementScreen
+                )
 
                 self.manager.add_widget(
-                    SchoolScreen(
+                    ManagementScreen(
                         self.app_state,
-                        name="school"
+                        name="management"
                     )
                 )
 
-            self.manager.current = "school"
+
+            self.manager.current = (
+                "management"
+            )
 
             return
 
-        if not self.manager.has_screen("module"):
 
-            from mobile.screens.module import ModuleScreen
+        # ==========================
+        # OTHER MODULES
+        # ==========================
+
+        if not self.manager.has_screen(
+            "module"
+        ):
+
+            from mobile.screens.module import (
+                ModuleScreen
+            )
+
 
             self.manager.add_widget(
                 ModuleScreen(
@@ -364,7 +385,11 @@ class DashboardScreen(Screen):
                 )
             )
 
-        screen = self.manager.get_screen("module")
+
+        screen = self.manager.get_screen(
+            "module"
+        )
+
 
         screen.show_module(
             title,
@@ -372,7 +397,10 @@ class DashboardScreen(Screen):
             self.app_state.role
         )
 
-        self.manager.current = "module"
+
+        self.manager.current = (
+            "module"
+        )
 
     def open_update(self, *_):
 
