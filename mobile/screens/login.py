@@ -123,7 +123,6 @@ class LoginScreen(Screen):
             height=dp(45),
         )
 
-
         self.login_button = Button(
             text=rtl_text(
                 "ورود به فراهوش"
@@ -142,26 +141,66 @@ class LoginScreen(Screen):
         )
 
 
-        root.add_widget(self.identifier)
-        root.add_widget(self.password)
-        root.add_widget(self.status)
-        root.add_widget(self.login_button)
+        root.add_widget(
+            self.identifier
+        )
+
+        root.add_widget(
+            self.password
+        )
+
+        root.add_widget(
+            self.status
+        )
+
+        root.add_widget(
+            self.login_button
+        )
 
 
-        self.add_widget(root)
+        self.add_widget(
+            root
+        )
+
+
+    # ==========================
+    # STATUS
+    # ==========================
+
+    def _set_status(
+        self,
+        text,
+        color=SECONDARY
+    ):
+
+        self.status.text = rtl_text(
+            text
+        )
+
+        self.status.color = color
+
+
 
     # ==========================
     # LOGIN
     # ==========================
 
-    def login(self, *_):
+    def login(
+        self,
+        *_ 
+    ):
 
         if self._busy:
             return
 
 
-        identifier = self.identifier.text.strip()
-        password = self.password.text
+        identifier = (
+            self.identifier.text.strip()
+        )
+
+        password = (
+            self.password.text
+        )
 
 
         if not identifier or not password:
@@ -184,22 +223,68 @@ class LoginScreen(Screen):
             return
 
 
-        # ==========================
-        # LOCAL TEST LOGIN
-        # ==========================
+        self._busy = True
 
-        if identifier == "admin" and password == "1234":
 
-            try:
+        self.login_button.disabled = True
 
-                test_session = {
+
+        self._set_status(
+            "در حال بررسی اطلاعات...",
+            SECONDARY
+        )
+
+
+        Thread(
+            target=self._authenticate,
+            args=(
+                identifier,
+                password
+            ),
+            daemon=True
+        ).start()
+
+
+
+    # ==========================
+    # AUTHENTICATION
+    # ==========================
+
+    def _authenticate(
+        self,
+        identifier,
+        password
+    ):
+
+        try:
+
+            # ======================
+            # LOCAL TEST LOGIN
+            # ======================
+
+            if (
+                identifier == "admin"
+                and password == "1234"
+            ):
+
+                session = {
+
                     "user": {
+
                         "id": "local-admin",
+
                         "username": "admin",
+
                         "role": "manager",
-                        "display_name": "مدیر فراهوش"
+
+                        "display_name":
+                            "مدیر فراهوش"
                     },
-                    "token": "local-test-token"
+
+
+                    "token":
+                        "local-test-token"
+
                 }
 
 
@@ -209,120 +294,82 @@ class LoginScreen(Screen):
                 ):
 
                     self.app_state.set_session(
-                        test_session
+                        session
                     )
-
 
                 else:
 
                     self.app_state.session = (
-                        test_session
+                        session
                     )
 
 
-            except Exception as exc:
 
-                print(
-                    "LOCAL SESSION ERROR:",
-                    repr(exc)
+                Clock.schedule_once(
+                    lambda dt:
+                    self._login_success(),
+                    0
                 )
 
 
-            self.password.text = ""
+                return
 
-            self._open_dashboard()
+            # ======================
+            # SERVER LOGIN
+            # ======================
 
-            return
+            else:
+
+                # فعلاً تا زمان اتصال API
+                # ورود واقعی اینجا اضافه می‌شود
+
+                Clock.schedule_once(
+                    lambda dt:
+                    self._login_failed(
+                        "نام کاربری یا رمز عبور اشتباه است."
+                    ),
+                    0
+                )
 
 
+        except Exception as exc:
 
-        # ==========================
-        # SUPABASE LOGIN
-        # ==========================
-
-
-        if not hasattr(
-            self.app_state,
-            "api"
-        ) or self.app_state.api is None:
-
-            self._set_status(
-                "سرویس اتصال به سرور ایجاد نشد.",
-                ERROR
+            print(
+                "LOGIN ERROR:",
+                repr(exc)
             )
 
-            return
 
-
-        if not self.app_state.api.configured:
-
-            self._set_status(
-                "تنظیمات اتصال به سرور فعال نیست.",
-                ERROR
+            Clock.schedule_once(
+                lambda dt:
+                self._login_failed(
+                    "خطا در ورود به سیستم"
+                ),
+                0
             )
 
-            return
 
 
-        self._busy = True
+    # ==========================
+    # LOGIN SUCCESS
+    # ==========================
 
-        self.login_button.disabled = True
+    def _login_success(
+        self
+    ):
 
-        self.login_button.text = rtl_text(
-            "در حال ورود..."
+        self._busy = False
+
+        self.login_button.disabled = False
+
+
+        self._set_status(
+            "ورود موفق",
+            SUCCESS
         )
 
 
-        Thread(
-            target=self._login_worker,
-            args=(
-                identifier,
-                password,
-            ),
-            daemon=True,
-        ).start()
-
-
-
-    def _open_dashboard(self):
-
         try:
-
-            if not self.manager.has_screen(
-                "dashboard"
-            ):
-
-                from mobile.screens.dashboard import (
-                    DashboardScreen
-                )
-
-
-                self.manager.add_widget(
-                    DashboardScreen(
-                        self.app_state,
-                        name="dashboard"
-                    )
-                )
-
-
-            dashboard = (
-                self.manager.get_screen(
-                    "dashboard"
-                )
-            )
-
-
-            try:
-
-                dashboard.refresh()
-
-            except Exception as exc:
-
-                print(
-                    "DASHBOARD REFRESH ERROR:",
-                    repr(exc)
-                )
-
 
             self.manager.current = (
                 "dashboard"
@@ -331,88 +378,22 @@ class LoginScreen(Screen):
 
         except Exception as exc:
 
+            print(
+                "DASHBOARD OPEN ERROR:",
+                repr(exc)
+            )
+
+
             self._set_status(
-                str(exc),
+                "خطا در باز کردن صفحه اصلی",
                 ERROR
             )
 
-    def _login_worker(
-        self,
-        identifier,
-        password
-    ):
-
-        try:
-
-            result = (
-                self.app_state.api.sign_in(
-                    identifier,
-                    password
-                )
-            )
 
 
-            Clock.schedule_once(
-                lambda dt:
-                self._login_success(result),
-                0
-            )
-
-
-        except Exception as exc:
-
-            Clock.schedule_once(
-                lambda dt, msg=str(exc):
-                self._login_failed(msg),
-                0
-            )
-
-
-
-    def _login_success(
-        self,
-        payload
-    ):
-
-        try:
-
-            saved = (
-                self.app_state.set_session(
-                    payload
-                )
-            )
-
-
-            if not saved:
-
-                raise Exception(
-                    "ذخیره نشست کاربر انجام نشد."
-                )
-
-
-            self.password.text = ""
-
-
-            self._busy = False
-
-            self.login_button.disabled = False
-
-            self.login_button.text = rtl_text(
-                "ورود به فراهوش"
-            )
-
-
-            self._open_dashboard()
-
-
-
-        except Exception as exc:
-
-            self._login_failed(
-                str(exc)
-            )
-
-
+    # ==========================
+    # LOGIN FAILED
+    # ==========================
 
     def _login_failed(
         self,
@@ -421,30 +402,10 @@ class LoginScreen(Screen):
 
         self._busy = False
 
-
         self.login_button.disabled = False
 
 
-        self.login_button.text = rtl_text(
-            "ورود به فراهوش"
-        )
-
-
         self._set_status(
-            message or "ورود انجام نشد.",
+            message,
             ERROR
-        )
-
-
-
-    def _set_status(
-        self,
-        message,
-        color
-    ):
-
-        self.status.color = color
-
-        self.status.text = rtl_text(
-            message
         )
