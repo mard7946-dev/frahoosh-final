@@ -266,12 +266,31 @@ class DashboardScreen(Screen):
             )
             return
 
-        role = self.app_state.role
-        name = self.app_state.display_name
+        role = getattr(
+            self.app_state,
+            "role",
+            None
+        )
+
+        name = getattr(
+            self.app_state,
+            "display_name",
+            "کاربر"
+        )
+
+        print(
+            "DASHBOARD ROLE:",
+            role
+        )
+
+        print(
+            "DASHBOARD NAME:",
+            name
+        )
 
         label = ROLE_LABELS.get(
             role,
-            "کاربر"
+            "مدیریت"
         )
 
         self.header.text = rtl_text(
