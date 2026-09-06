@@ -1,423 +1,775 @@
+from kivy.clock import Clock
+from kivy.animation import Animation
+
 from kivy.uix.screenmanager import Screen
+from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
 from kivy.uix.button import Button
-from kivy.uix.scrollview import ScrollView
+from kivy.uix.popup import Popup
 from kivy.metrics import dp
+
+from kivy.graphics import Color, RoundedRectangle
 
 from mobile.config import (
     APP_NAME,
+    SCHOOL_NAME,
     PRIMARY,
     SECONDARY,
     SUCCESS,
     WHITE,
 )
 
-from mobile.ui import font_name, rtl_text
+from mobile.ui import (
+    font_name,
+    rtl_text,
+)
 
 
-ROLE_LABELS = {
-    "manager": "مدیریت",
-    "admin": "مدیریت",
-    "executive": "معاون اجرایی",
-    "vice": "معاون",
-    "vice_principal": "معاون",
-    "educational": "معاون آموزشی",
-    "cultural": "معاون پرورشی",
-    "advisor": "مشاور",
-    "counselor": "مشاور",
-    "teacher": "دبیر",
-    "student": "دانش‌آموز",
-    "parent": "ولی",
-}
+
+MENU_ITEMS_MANAGER = [
+
+    ("مدیریت مدرسه", "management"),
+
+    ("معاون آموزشی", "education"),
+
+    ("معاون اجرایی", "executive"),
+
+    ("معاون پرورشی", "cultural"),
+
+    ("مشاوره", "counseling"),
+
+    ("اولیا", "parents"),
+
+    ("دانش‌آموزان", "students"),
+
+    ("مالی", "finance"),
+
+    ("کلاس‌های آنلاین", "online"),
+
+    ("تابلو هوشمند", "smart_board"),
+
+    ("هوش مصنوعی", "ai"),
+
+    ("صندوق پیام‌ها", "messages"),
+
+    ("تنظیمات", "settings"),
+
+    ("درباره برنامه", "about"),
+
+]
 
 
-ROLE_MODULES = {
+INFO_TEXTS = [
 
-    "manager": [
-        ("مدیریت مدرسه", "school"),
-        ("دانش‌آموزان", "students"),
-        ("دبیران", "teachers"),
-        ("کارکنان", "staff"),
-        ("کلاس‌ها", "classes"),
-        ("برنامه هفتگی", "schedule"),
-        ("امتحانات", "exams"),
-        ("کارت ورود به جلسه", "exam_cards"),
-        ("گزارش نمرات", "grades"),
-        ("کارنامه", "report_cards"),
-        ("حضور و غیاب", "attendance"),
-        ("انضباط", "discipline"),
-        ("مشاوره", "counseling"),
-        ("معاونت‌ها", "vice_principal"),
-        ("اولیا", "parents"),
-        ("پیام‌ها", "messages"),
-        ("اعلان‌ها", "notifications"),
-        ("صندوق پیشنهادات", "suggestions"),
-        ("کلاس آنلاین", "online_classes"),
-        ("آزمون آنلاین", "online_exams"),
-        ("بانک سوالات", "question_bank"),
-        ("تابلو هوشمند", "smart_board"),
-        ("هوش مصنوعی", "ai"),
-        ("مالی", "finance"),
-        ("پرداخت‌ها", "payments"),
-        ("انبار و اموال", "inventory"),
-        ("گزارش‌ها", "reports"),
-        ("تنظیمات", "settings"),
-        ("کاربران و حساب‌ها", "users"),
-    ],
+    "آیا می‌دانید فراهوش می‌تواند مدیریت مدرسه را هوشمندتر، سریع‌تر و دقیق‌تر کند؟",
 
-    "admin": [
-        ("مدیریت مدرسه", "school"),
-        ("دانش‌آموزان", "students"),
-        ("دبیران", "teachers"),
-        ("کلاس‌ها", "classes"),
-        ("امتحانات", "exams"),
-        ("گزارش‌ها", "reports"),
-        ("کلاس آنلاین", "online_classes"),
-        ("هوش مصنوعی", "ai"),
-        ("مالی", "finance"),
-        ("پیام‌ها", "messages"),
-        ("تنظیمات", "settings"),
-    ],
+    "آیا می‌دانید مدیر مدرسه می‌تواند همه بخش‌های آموزشی و اجرایی را یکپارچه مدیریت کند؟",
 
-    "teacher": [
-        ("کلاس‌های من", "classes"),
-        ("دانش‌آموزان", "students"),
-        ("حضور و غیاب", "attendance"),
-        ("نمرات", "grades"),
-        ("انضباط", "discipline"),
-        ("طرح درس", "lesson_plan"),
-        ("تکالیف", "assignments"),
-        ("بانک سوالات", "question_bank"),
-        ("تقویم", "calendar"),
-        ("امتحانات", "exams"),
-        ("جلسات اولیا", "parent_meetings"),
-        ("کلاس آنلاین", "online_classes"),
-        ("آزمون آنلاین", "online_exams"),
-        ("گزارش‌ها", "reports"),
-        ("ارجاع دانش‌آموز", "referrals"),
-        ("پیام‌ها", "messages"),
-        ("هوش مصنوعی", "ai"),
-        ("پروفایل", "profile"),
-    ],
+    "آیا می‌دانید اولیا می‌توانند ارتباط بهتر و سریع‌تری با مدرسه داشته باشند؟",
 
-    "student": [
-        ("پروفایل من", "profile"),
-        ("کلاس من", "classes"),
-        ("برنامه هفتگی", "schedule"),
-        ("حضور و غیاب", "attendance"),
-        ("نمرات", "grades"),
-        ("کارنامه", "report_cards"),
-        ("تکالیف", "assignments"),
-        ("امتحانات", "exams"),
-        ("کارت ورود به جلسه", "exam_cards"),
-        ("کلاس آنلاین", "online_classes"),
-        ("آزمون آنلاین", "online_exams"),
-        ("پیام‌ها", "messages"),
-        ("مسابقات فرهنگی", "cultural_competitions"),
-        ("خوارزمی", "khwarizmi"),
-        ("ورزش مدرسه", "sports"),
-    ],
+    "آیا می‌دانید هوش مصنوعی فراهوش در تحلیل آموزشی به مدرسه کمک می‌کند؟",
 
-    "parent": [
-        ("پروفایل فرزند", "child_profile"),
-        ("وضعیت تحصیلی", "student_status"),
-        ("گزارش ماهانه", "monthly_report"),
-        ("حضور و غیاب", "attendance"),
-        ("نمرات", "grades"),
-        ("کارنامه", "report_cards"),
-        ("تحلیل دانش‌آموز", "student_analysis"),
-        ("پرداخت‌ها", "payments"),
-        ("جلسه با دبیر", "teacher_meeting"),
-        ("پیام‌های مدرسه", "school_messages"),
-        ("وضعیت آنلاین", "live_status"),
-        ("پیشنهادات", "suggestions"),
-    ],
+    "آیا می‌دانید کلاس آنلاین و تابلو هوشمند بخشی از سامانه یکپارچه فراهوش هستند؟",
 
-    "advisor": [
-        ("داشبورد مشاوره", "counseling"),
-        ("پرونده مشاوره", "counseling_file"),
-        ("پیگیری دانش‌آموزان", "student_followup"),
-        ("ارتباط با خانواده", "parent_contact"),
-        ("ارجاعات", "referrals"),
-        ("گزارش‌ها", "reports"),
-        ("هدایت تحصیلی", "smart_guidance"),
-    ],
+]
 
-    "counselor": [
-        ("داشبورد مشاوره", "counseling"),
-        ("پرونده مشاوره", "counseling_file"),
-        ("پیگیری دانش‌آموزان", "student_followup"),
-        ("گزارش‌ها", "reports"),
-        ("ارجاعات", "referrals"),
-    ],
 
-    "executive": [
-        ("داشبورد اجرایی", "executive"),
-        ("دانش‌آموزان", "students"),
-        ("کارکنان", "staff"),
-        ("کلاس‌ها", "classes"),
-        ("ثبت‌نام", "registration"),
-        ("کارت دانش‌آموزی", "student_cards"),
-        ("کارت امتحان", "exam_cards"),
-        ("صندلی امتحان", "exam_seats"),
-        ("گزارش‌ها", "reports"),
-        ("بایگانی", "archive"),
-        ("اموال", "inventory"),
-        ("درخواست‌ها", "requests"),
-        ("تنظیمات", "settings"),
-    ],
+class RoundedCard(BoxLayout):
 
-    "vice": [
-        ("داشبورد معاونت", "vice_principal"),
-        ("انضباط", "discipline"),
-        ("بررسی نمرات", "grades"),
-        ("طرح درس‌ها", "lesson_plan"),
-        ("ارجاعات", "referrals"),
-        ("درخواست جلسات", "meetings"),
-        ("گزارش‌ها", "reports"),
-    ],
+    def __init__(self, **kwargs):
 
-    "vice_principal": [
-        ("داشبورد معاونت", "vice_principal"),
-        ("انضباط", "discipline"),
-        ("بررسی نمرات", "grades"),
-        ("طرح درس‌ها", "lesson_plan"),
-        ("ارجاعات", "referrals"),
-        ("درخواست جلسات", "meetings"),
-        ("گزارش‌ها", "reports"),
-    ],
+        super().__init__(**kwargs)
 
-    "educational": [
-        ("داشبورد آموزشی", "education"),
-        ("ارزیابی‌ها", "evaluations"),
-        ("امتحانات", "exams"),
-        ("فعالیت‌های فوق برنامه", "extracurricular"),
-        ("خوارزمی", "khwarizmi"),
-        ("بانک سوالات", "question_bank"),
-        ("ارجاعات", "referrals"),
-        ("گزارش‌ها", "reports"),
-    ],
+        with self.canvas.before:
 
-    "cultural": [
-        ("داشبورد پرورشی", "cultural"),
-        ("مراسم‌ها", "ceremonies"),
-        ("مسابقات", "competitions"),
-        ("جشنواره‌ها", "festivals"),
-        ("قرآن", "quran"),
-        ("استعدادها", "talents"),
-        ("اردوها", "trips"),
-        ("گزارش‌ها", "reports"),
-    ],
-}
+            Color(
+                1,
+                1,
+                1,
+                0.90
+            )
+
+            self.rect = RoundedRectangle(
+                radius=[
+                    dp(20)
+                ]
+            )
+
+        self.bind(
+            pos=self.update_rect,
+            size=self.update_rect
+        )
+
+
+    def update_rect(
+        self,
+        *args
+    ):
+
+        self.rect.pos = self.pos
+        self.rect.size = self.size
+
 
 
 class DashboardScreen(Screen):
 
-    def __init__(self, app_state, **kwargs):
-        super().__init__(**kwargs)
+
+    def __init__(
+        self,
+        app_state,
+        **kwargs
+    ):
+
+        super().__init__(
+            **kwargs
+        )
 
         self.app_state = app_state
 
-        root = BoxLayout(
-            orientation="vertical",
-            padding=dp(12),
-            spacing=dp(8)
-        )
+        self.text_index = 0
 
-        self.header = Label(
+        self.char_index = 0
+
+        self.current_text = ""
+
+        self.menu_open = False
+
+        self.build()
+
+    def build(self):
+
+        root = FloatLayout()
+
+
+        # =========================
+        # BACKGROUND
+        # =========================
+
+        with root.canvas.before:
+
+            Color(
+                0.94,
+                0.97,
+                1,
+                1
+            )
+
+            self.background = RoundedRectangle(
+                radius=[
+                    dp(0)
+                ]
+            )
+
+
+        # =========================
+        # HEADER
+        # =========================
+
+        self.menu_button = Button(
+
+            text="☰",
+
+            font_size="32sp",
+
             font_name=font_name(),
-            font_size="20sp",
+
+            background_normal="",
+
+            background_color=(
+                0,
+                0,
+                0,
+                0
+            ),
+
             color=PRIMARY,
-            size_hint_y=None,
-            height=dp(80)
+
+            size_hint=(
+                None,
+                None
+            ),
+
+            size=(
+                dp(60),
+                dp(60)
+            ),
+
+            pos_hint={
+                "right": 1,
+                "top": 1
+            }
+
         )
 
-        root.add_widget(self.header)
 
-        scroll = ScrollView()
+        self.menu_button.bind(
+            on_release=self.toggle_menu
+        )
 
-        self.grid = GridLayout(
-            cols=2,
+
+        root.add_widget(
+            self.menu_button
+        )
+
+
+        self.title_box = BoxLayout(
+
+            orientation="vertical",
+
+            size_hint=(
+                1,
+                None
+            ),
+
+            height=dp(100),
+
+            pos_hint={
+                "center_x":0.5,
+                "top":0.95
+            }
+
+        )
+
+
+        title = Label(
+
+            text=rtl_text(
+                "سامانه هوشمند مدیریت مدرسه"
+            ),
+
+            font_name=font_name(),
+
+            font_size="22sp",
+
+            color=PRIMARY
+
+        )
+
+
+        school = Label(
+
+            text=rtl_text(
+                SCHOOL_NAME
+            ),
+
+            font_name=font_name(),
+
+            font_size="15sp",
+
+            color=SECONDARY
+
+        )
+
+
+        self.title_box.add_widget(
+            title
+        )
+
+        self.title_box.add_widget(
+            school
+        )
+
+
+        root.add_widget(
+            self.title_box
+        )
+
+
+        # =========================
+        # INFO CARD
+        # =========================
+
+
+        self.info_card = RoundedCard(
+
+            orientation="vertical",
+
+            padding=dp(20),
+
+            spacing=dp(10),
+
+            size_hint=(
+                .86,
+                None
+            ),
+
+            height=dp(180),
+
+            pos_hint={
+                "center_x":0.5,
+                "center_y":0.55
+            }
+
+        )
+
+
+        self.info_title = Label(
+
+            text=rtl_text(
+                "✨ آیا می‌دانید..."
+            ),
+
+            font_name=font_name(),
+
+            font_size="18sp",
+
+            color=PRIMARY,
+
+            size_hint_y=None,
+
+            height=dp(40)
+
+        )
+
+
+        self.info_text = Label(
+
+            text="",
+
+            font_name=font_name(),
+
+            font_size="15sp",
+
+            color=SECONDARY,
+
+            halign="center",
+
+            valign="middle"
+
+        )
+
+
+        self.info_text.bind(
+            size=lambda instance, value:
+            setattr(
+                instance,
+                "text_size",
+                value
+            )
+        )
+
+
+        self.info_card.add_widget(
+            self.info_title
+        )
+
+
+        self.info_card.add_widget(
+            self.info_text
+        )
+
+
+        root.add_widget(
+            self.info_card
+        )
+
+
+        # =========================
+        # FEATURE CARDS
+        # =========================
+
+
+        features = BoxLayout(
+
+            orientation="horizontal",
+
             spacing=dp(8),
-            padding=dp(4),
-            size_hint_y=None
+
+            size_hint=(
+                .9,
+                None
+            ),
+
+            height=dp(80),
+
+            pos_hint={
+                "center_x":0.5,
+                "y":0.08
+            }
+
         )
 
-        self.grid.bind(
-            minimum_height=self.grid.setter("height")
-        )
 
-        scroll.add_widget(self.grid)
-        root.add_widget(scroll)
+        items = [
 
-        self.add_widget(root)
+            "🤖\nهوش مصنوعی",
 
-        self.refresh()
+            "📚\nمدیریت آموزشی",
 
-    def refresh(self):
+            "🎥\nکلاس آنلاین",
 
-        self.grid.clear_widgets()
+        ]
 
-        if self.app_state is None:
-            self.header.text = rtl_text(
-                "فراهوش\nدر حال آماده‌سازی..."
-            )
-            return
 
-        role = getattr(
-            self.app_state,
-            "role",
-            None
-        )
+        for item in items:
 
-        name = getattr(
-            self.app_state,
-            "display_name",
-            "کاربر"
-        )
+            card = Button(
 
-        print(
-            "DASHBOARD ROLE:",
-            role
-        )
+                text=rtl_text(item),
 
-        print(
-            "DASHBOARD NAME:",
-            name
-        )
-
-        label = ROLE_LABELS.get(
-            role,
-            "مدیریت"
-        )
-
-        self.header.text = rtl_text(
-            f"{APP_NAME}\n{name} - {label}"
-        )
-
-        modules = ROLE_MODULES.get(
-            role,
-            ROLE_MODULES["student"]
-        )
-
-        for title, key in modules:
-
-            btn = Button(
-                text=rtl_text(title),
                 font_name=font_name(),
+
+                font_size="13sp",
+
                 background_normal="",
-                background_color=SECONDARY,
-                color=WHITE,
-                size_hint_y=None,
-                height=dp(54)
+
+                background_color=(
+                    SECONDARY
+                ),
+
+                color=WHITE
+
             )
 
-            btn.bind(
-                on_release=lambda x, t=title, k=key:
-                self.open_module(t, k)
-            )
-
-            self.grid.add_widget(btn)
-
-        update = Button(
-            text=rtl_text("مرکز به‌روزرسانی"),
-            font_name=font_name(),
-            background_normal="",
-            background_color=SUCCESS,
-            color=WHITE,
-            size_hint_y=None,
-            height=dp(54)
-        )
-
-        update.bind(
-            on_release=self.open_update
-        )
-
-        self.grid.add_widget(update)
-
-        logout = Button(
-            text=rtl_text("خروج"),
-            font_name=font_name(),
-            background_normal="",
-            background_color=PRIMARY,
-            color=WHITE,
-            size_hint_y=None,
-            height=dp(54)
-        )
-
-        logout.bind(
-            on_release=self.logout
-        )
-
-        self.grid.add_widget(logout)
-
-        
-    def open_module(self, title, key):
-
-        if key == "school":
-
-            if not self.manager.has_screen(
-                "management"
-            ):
-
-                from mobile.screens.management import (
-                    ManagementScreen
-                )
-
-                self.manager.add_widget(
-                    ManagementScreen(
-                        self.app_state,
-                        name="management"
-                    )
-                )
-
-            self.manager.current = "management"
-
-            return
-
-
-        if not self.manager.has_screen(
-            "module"
-        ):
-
-            from mobile.screens.module import (
-                ModuleScreen
-            )
-
-            self.manager.add_widget(
-                ModuleScreen(
-                    self.app_state,
-                    name="module"
-                )
+            features.add_widget(
+                card
             )
 
 
-        screen = self.manager.get_screen(
-            "module"
+        root.add_widget(
+            features
         )
 
 
-        screen.show_module(
-            title,
-            key,
-            self.app_state.role
+        self.add_widget(
+            root
         )
 
 
-        self.manager.current = "module"
+        Clock.schedule_interval(
+            self.type_effect,
+            0.08
+        )
 
-    def open_update(self, *_):
 
-        if self.manager.has_screen("update"):
-            self.manager.current = "update"
+    # =========================
+    # TYPE EFFECT
+    # =========================
 
-    def logout(self, *_):
+    def type_effect(
+        self,
+        dt
+    ):
+
+        if self.text_index >= len(INFO_TEXTS):
+
+            self.text_index = 0
+
+
+        full_text = INFO_TEXTS[
+            self.text_index
+        ]
+
+
+        if self.char_index <= len(full_text):
+
+            self.current_text = (
+                full_text[:self.char_index]
+            )
+
+            self.info_text.text = rtl_text(
+                self.current_text
+            )
+
+            self.char_index += 1
+
+
+        else:
+
+            self.char_index = 0
+
+            self.text_index += 1
+
+
+
+    # =========================
+    # SIDE MENU
+    # =========================
+
+    def toggle_menu(
+        self,
+        *_ 
+    ):
+
+        if self.menu_open:
+
+            self.close_menu()
+
+        else:
+
+            self.open_menu()
+
+
+
+    def open_menu(
+        self
+    ):
+
+        self.menu_open = True
+
+
+        self.menu_box = BoxLayout(
+
+            orientation="vertical",
+
+            spacing=dp(6),
+
+            padding=dp(12),
+
+            size_hint=(
+                None,
+                1
+            ),
+
+            width=dp(280),
+
+            pos_hint={
+                "left":0,
+                "top":1
+            }
+
+        )
+
+
+        with self.menu_box.canvas.before:
+
+            Color(
+                1,
+                1,
+                1,
+                .96
+            )
+
+            self.menu_background = RoundedRectangle(
+                radius=[
+                    dp(20)
+                ]
+            )
+
+
+        self.menu_box.bind(
+            pos=self.update_menu_bg,
+            size=self.update_menu_bg
+        )
+
+
+        role = "student"
+
 
         if self.app_state:
-            self.app_state.logout()
 
-        self.manager.current = "login"
+            role = getattr(
+                self.app_state,
+                "role",
+                "student"
+            )
 
-                
+
+        # مدیر همه را می‌بیند
+
+        if role in [
+            "manager",
+            "admin"
+        ]:
+
+            items = MENU_ITEMS_MANAGER
+
+
+        else:
+
+            items = self.get_user_menu(
+                role
+            )
+
+
+
+        for title, key in items:
+
+            btn = Button(
+
+                text=rtl_text(title),
+
+                font_name=font_name(),
+
+                background_normal="",
+
+                background_color=SECONDARY,
+
+                color=WHITE,
+
+                size_hint_y=None,
+
+                height=dp(48)
+
+            )
+
+
+            btn.bind(
+                on_release=lambda x, k=key, t=title:
+                self.select_menu(
+                    t,
+                    k
+                )
+            )
+
+
+            self.menu_box.add_widget(
+                btn
+            )
+
+
+        self.add_widget(
+            self.menu_box
+        )
+
+
+        Animation(
+            x=0,
+            duration=.25
+        ).start(
+            self.menu_box
+        )
+
+
+
+    def update_menu_bg(
+        self,
+        *args
+    ):
+
+        if hasattr(
+            self,
+            "menu_background"
+        ):
+
+            self.menu_background.pos = (
+                self.menu_box.pos
+            )
+
+            self.menu_background.size = (
+                self.menu_box.size
+            )
+
+
+
+    def close_menu(
+        self
+    ):
+
+        if hasattr(
+            self,
+            "menu_box"
+        ):
+
+            self.remove_widget(
+                self.menu_box
+            )
+
+
+        self.menu_open = False
+
+
+
+    # =========================
+    # USER MENUS
+    # =========================
+
+    def get_user_menu(
+        self,
+        role
+    ):
+
+
+        menus = {
+
+            "student":[
+
+                ("پروفایل من","profile"),
+
+                ("کلاس من","classes"),
+
+                ("برنامه هفتگی","schedule"),
+
+                ("نمرات","grades"),
+
+                ("کارنامه","report"),
+
+                ("کلاس آنلاین","online")
+
+            ],
+
+
+            "parent":[
+
+                ("فرزند من","child"),
+
+                ("وضعیت تحصیلی","status"),
+
+                ("پرداخت‌ها","payments"),
+
+                ("پیام‌های مدرسه","messages")
+
+            ],
+
+
+            "teacher":[
+
+                ("کلاس‌های من","classes"),
+
+                ("ثبت نمرات","grades"),
+
+                ("حضور و غیاب","attendance"),
+
+                ("پیام‌ها","messages")
+
+            ]
+
+        }
+
+
+        return menus.get(
+            role,
+            menus["student"]
+        )
+
+
+
+    # =========================
+    # MENU CLICK
+    # =========================
+
+    def select_menu(
+        self,
+        title,
+        key
+    ):
+
+        self.close_menu()
+
+
+        print(
+            "OPEN PANEL:",
+            title,
+            key
+        )
+
+
+        # فعلاً اتصال پنل‌ها
+        # در مرحله بعد اضافه می‌شود
+
+
+
+    # =========================
+    # REFRESH
+    # =========================
+
+    def on_pre_enter(
+        self
+    ):
+
+        self.text_index = 0
+
+        self.char_index = 0
+
+
