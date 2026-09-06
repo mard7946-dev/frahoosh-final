@@ -334,11 +334,8 @@ class DashboardScreen(Screen):
 
         self.grid.add_widget(logout)
 
-        def open_module(self, title, key):
-
-        # ==========================
-        # MANAGEMENT PANEL
-        # ==========================
+        
+    def open_module(self, title, key):
 
         if key == "school":
 
@@ -357,17 +354,10 @@ class DashboardScreen(Screen):
                     )
                 )
 
-
-            self.manager.current = (
-                "management"
-            )
+            self.manager.current = "management"
 
             return
 
-
-        # ==========================
-        # OTHER MODULES
-        # ==========================
 
         if not self.manager.has_screen(
             "module"
@@ -376,7 +366,6 @@ class DashboardScreen(Screen):
             from mobile.screens.module import (
                 ModuleScreen
             )
-
 
             self.manager.add_widget(
                 ModuleScreen(
@@ -398,9 +387,7 @@ class DashboardScreen(Screen):
         )
 
 
-        self.manager.current = (
-            "module"
-        )
+        self.manager.current = "module"
 
     def open_update(self, *_):
 
