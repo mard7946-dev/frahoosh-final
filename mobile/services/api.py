@@ -14,17 +14,23 @@ class ApiError(RuntimeError):
     pass
 
 
+
 class _Response:
 
     def __init__(self, status, body):
+
         self.status_code = status
         self._body = body or b""
 
+
     @property
     def ok(self):
+
         return 200 <= self.status_code < 300
 
+
     def json(self):
+
         if not self._body:
             return {}
 
@@ -32,11 +38,14 @@ class _Response:
             self._body.decode("utf-8")
         )
 
+
     def text(self):
+
         return self._body.decode(
             "utf-8",
             errors="replace"
         )
+
 
 
 def _request(
@@ -49,15 +58,19 @@ def _request(
 ):
 
     if params:
+
         url += (
             "&" if "?" in url else "?"
         ) + urlencode(params)
 
+
     data = None
+
 
     req_headers = dict(
         headers or {}
     )
+
 
     if payload is not None:
 
@@ -66,9 +79,11 @@ def _request(
             ensure_ascii=False
         ).encode("utf-8")
 
+
         req_headers["Content-Type"] = (
             "application/json"
         )
+
 
     request = Request(
         url,
@@ -77,6 +92,7 @@ def _request(
         method=method,
     )
 
+
     try:
 
         with urlopen(
@@ -84,46 +100,64 @@ def _request(
             timeout=timeout
         ) as response:
 
+
             return _Response(
                 response.status,
                 response.read()
             )
 
+
     except HTTPError as exc:
+
 
         return _Response(
             exc.code,
             exc.read()
         )
 
+
     except URLError as exc:
+
 
         raise ApiError(
             "خطای اتصال به سرور: "
             f"{exc.reason}"
         ) from exc
 
+
     except TimeoutError as exc:
+
 
         raise ApiError(
             "زمان اتصال به سرور به پایان رسید."
         ) from exc
 
 
+
+
 class SupabaseClient:
+
 
     def __init__(self):
 
         self.url = SUPABASE_URL
+
         self.key = SUPABASE_ANON_KEY
 
+
         self.access_token = ""
+
         self.refresh_token = ""
 
+
         self.expires_in = None
+
         self.expires_at = None
 
+
         self.token_type = "bearer"
+
+
 
     @property
     def configured(self):
@@ -132,12 +166,23 @@ class SupabaseClient:
             self.url and self.key
         )
 
-    def _headers(self, authenticated=False):
+
+
+    def _headers(
+        self,
+        authenticated=False
+    ):
+
 
         headers = {
+
             "apikey": self.key,
-            "Content-Type": "application/json",
+
+            "Content-Type":
+                "application/json",
+
         }
+
 
         if (
             authenticated
@@ -148,7 +193,10 @@ class SupabaseClient:
                 f"Bearer {self.access_token}"
             )
 
+
         return headers
+
+
 
     def sign_in(
         self,
@@ -156,263 +204,545 @@ class SupabaseClient:
         password
     ):
 
+
         if not self.configured:
+
 
             raise ApiError(
                 "اتصال سرور در تنظیمات "
                 "این نسخه فعال نشده است."
             )
 
+
+
         identifier = (
             identifier or ""
         ).strip()
 
+
+
         if not identifier or not password:
+
 
             raise ApiError(
                 "نام کاربری و رمز عبور را وارد کنید."
             )
 
+
+
+        # =================================
+        # National Code Login
+        # =================================
+
+        if "@" not in identifier:
+
+
+            identifier = (
+                self.resolve_email_by_national_code(
+                    identifier
+                )
+            )
+
+
+            if not identifier:
+
+
+                raise ApiError(
+                    "کاربری با این کد ملی پیدا نشد."
+                )
+
+
+
         response = _request(
+
             "POST",
+
             (
                 f"{self.url}"
                 "/auth/v1/token"
                 "?grant_type=password"
             ),
+
+
             headers=self._headers(),
+
+
             payload={
+
                 "email": identifier,
+
                 "password": password,
+
             },
+
+
             timeout=API_TIMEOUT,
+
         )
+
+
 
         if not response.ok:
 
+
             raise ApiError(
+
                 self._error(
                     response,
                     "ایمیل یا رمز عبور صحیح نیست."
                 )
+
             )
 
+
+
         data = response.json() or {}
+
+
 
         self.access_token = data.get(
             "access_token",
             ""
         )
 
+
         self.refresh_token = data.get(
             "refresh_token",
             ""
         )
 
+
         self.expires_in = data.get(
             "expires_in"
         )
 
+
         self.expires_at = data.get(
             "expires_at"
         )
+
 
         self.token_type = data.get(
             "token_type",
             "bearer"
         )
 
+
+
         if not self.access_token:
 
-            self.access_token = ""
-            self.refresh_token = ""
 
             raise ApiError(
                 "سرور نشست معتبر ایجاد نکرد."
             )
 
+
+
         user = data.get(
             "user"
         ) or {}
 
+
+
         return {
+
             "user": user,
-            "profile": self._profile(user),
-            "access_token": self.access_token,
-            "refresh_token": self.refresh_token,
-            "expires_in": self.expires_in,
-            "expires_at": self.expires_at,
-            "token_type": self.token_type,
+
+            "profile":
+                self._profile(user),
+
+            "access_token":
+                self.access_token,
+
+            "refresh_token":
+                self.refresh_token,
+
+            "expires_in":
+                self.expires_in,
+
+            "expires_at":
+                self.expires_at,
+
+            "token_type":
+                self.token_type,
+
         }
 
-    def refresh_access_token(self):
+    def resolve_email_by_national_code(
+        self,
+        national_code
+    ):
+
+        if not self.configured:
+
+            raise ApiError(
+                "اتصال سرور فعال نیست."
+            )
+
+
+        response = _request(
+
+            "GET",
+
+            (
+                f"{self.url}"
+                "/rest/v1/account_settings"
+            ),
+
+
+            headers=self._headers(),
+
+
+            params={
+
+                "national_code":
+                    f"eq.{national_code}",
+
+                "select":
+                    "email",
+
+                "limit":
+                    "1",
+
+            },
+
+
+            timeout=API_TIMEOUT,
+
+        )
+
+
+
+        if not response.ok:
+
+
+            raise ApiError(
+                self._error(
+                    response,
+                    "خطا در پیدا کردن کاربر."
+                )
+            )
+
+
+
+        rows = (
+
+            response.json()
+
+            or []
+
+        )
+
+
+
+        if not rows:
+
+            return None
+
+
+
+        return rows[0].get(
+            "email"
+        )
+
+
+
+    def refresh_access_token(
+        self
+    ):
+
 
         if (
+
             not self.configured
+
             or not self.refresh_token
+
         ):
+
 
             return False
 
+
+
         response = _request(
+
             "POST",
+
             (
                 f"{self.url}"
                 "/auth/v1/token"
                 "?grant_type=refresh_token"
             ),
+
+
             headers=self._headers(),
+
+
             payload={
-                "refresh_token": self.refresh_token
+
+                "refresh_token":
+                    self.refresh_token
+
             },
+
+
             timeout=API_TIMEOUT,
+
         )
+
+
 
         if not response.ok:
 
+
             self.access_token = ""
+
             self.refresh_token = ""
+
             self.expires_in = None
+
             self.expires_at = None
+
 
             return False
 
+
+
         data = response.json() or {}
+
+
 
         new_access_token = data.get(
             "access_token"
         )
 
+
+
         if not new_access_token:
 
+
             self.access_token = ""
+
             self.refresh_token = ""
+
 
             return False
 
-        self.access_token = new_access_token
+
+
+        self.access_token = (
+            new_access_token
+        )
+
+
 
         new_refresh_token = data.get(
             "refresh_token"
         )
 
+
+
         if new_refresh_token:
+
 
             self.refresh_token = (
                 new_refresh_token
             )
 
+
+
         self.expires_in = data.get(
             "expires_in"
         )
+
 
         self.expires_at = data.get(
             "expires_at"
         )
 
+
         self.token_type = data.get(
+
             "token_type",
+
             self.token_type or "bearer"
+
         )
+
+
 
         return True
 
-    def _profile(self, user):
+
+
+    def _profile(
+        self,
+        user
+    ):
+
 
         metadata = (
-            user.get("user_metadata")
+
+            user.get(
+                "user_metadata"
+            )
+
             or {}
+
         )
+
+
 
         profile = {}
 
+
+
         for key in (
+
             "role",
+
             "display_name",
+
             "full_name",
+
             "username",
+
         ):
+
 
             if key in metadata:
 
+
                 profile[key] = metadata[key]
+
+
 
         email = user.get(
             "email",
             ""
         )
 
+
+
         if (
+
             not self.configured
+
             or not email
+
         ):
 
+
             profile.setdefault(
+
                 "email",
+
                 email
+
             )
+
 
             return profile
 
+
+
         try:
 
+
             response = _request(
+
                 "GET",
+
                 (
                     f"{self.url}"
                     "/rest/v1/account_settings"
                 ),
+
+
                 headers=self._headers(True),
+
+
                 params={
-                    "email": f"eq.{email}",
-                    "limit": "1",
+
+                    "email":
+                        f"eq.{email}",
+
+                    "limit":
+                        "1",
+
                 },
+
+
                 timeout=API_TIMEOUT,
+
             )
+
+
 
             if response.ok:
 
+
                 rows = (
+
                     response.json()
+
                     or []
+
                 )
 
+
+
                 if (
+
                     rows
+
                     and isinstance(
                         rows[0],
                         dict
                     )
+
                 ):
+
 
                     merged = dict(
                         profile
                     )
 
+
                     merged.update(
                         rows[0]
                     )
 
+
                     return merged
+
+
 
         except Exception:
 
+
             pass
+
+
 
         profile.setdefault(
             "email",
             email
         )
 
+
         profile.setdefault(
             "username",
             email
         )
 
+
         profile.setdefault(
             "display_name",
             email
         )
+
 
         return profile
 
@@ -422,59 +752,112 @@ class SupabaseClient:
         params=None
     ):
 
+
         if not self.configured:
+
 
             raise ApiError(
                 "اتصال سرور فعال نیست."
             )
 
+
+
         if not self.access_token:
+
 
             raise ApiError(
                 "نشست معتبر وجود ندارد."
             )
 
+
+
         request_params = params or {
-            "select": "*",
-            "limit": "50",
+
+
+            "select":
+                "*",
+
+
+            "limit":
+                "50",
+
+
         }
 
+
+
         response = _request(
+
             "GET",
+
             (
                 f"{self.url}"
                 f"/rest/v1/{table}"
             ),
+
+
             headers=self._headers(True),
+
+
             params=request_params,
+
+
             timeout=API_TIMEOUT,
+
         )
 
+
+
         if (
+
             response.status_code == 401
+
             and self.refresh_token
+
         ):
+
 
             if self.refresh_access_token():
 
+
                 response = _request(
+
                     "GET",
+
                     (
                         f"{self.url}"
                         f"/rest/v1/{table}"
                     ),
+
+
                     headers=self._headers(True),
+
+
                     params=request_params,
+
+
                     timeout=API_TIMEOUT,
+
                 )
+
+
 
         if not response.ok:
 
+
             raise ApiError(
-                self._error(response)
+
+                self._error(
+                    response
+                )
+
             )
 
+
+
         return response.json()
+
+
 
     def _error(
         self,
@@ -482,58 +865,111 @@ class SupabaseClient:
         default="خطای سرور"
     ):
 
+
         try:
 
+
             payload = (
+
                 response.json()
+
                 or {}
+
             )
 
+
+
             return (
-                payload.get("message")
+
+                payload.get(
+                    "message"
+                )
+
                 or payload.get(
                     "error_description"
                 )
-                or payload.get("msg")
-                or payload.get("hint")
-                or payload.get("details")
+
+                or payload.get(
+                    "msg"
+                )
+
+                or payload.get(
+                    "hint"
+                )
+
+                or payload.get(
+                    "details"
+                )
+
                 or default
+
             )
+
+
 
         except Exception:
 
+
             return (
+
                 f"{default} "
+
                 f"({response.status_code})"
+
             )
 
-    def sign_out(self):
+
+
+    def sign_out(
+        self
+    ):
+
 
         if (
+
             self.configured
+
             and self.access_token
+
         ):
+
 
             try:
 
+
                 _request(
+
                     "POST",
+
                     (
                         f"{self.url}"
                         "/auth/v1/logout"
                     ),
+
+
                     headers=self._headers(True),
+
+
                     timeout=API_TIMEOUT,
+
                 )
+
 
             except Exception:
 
+
                 pass
 
+
+
         self.access_token = ""
+
         self.refresh_token = ""
 
+
         self.expires_in = None
+
         self.expires_at = None
 
-        self.token_type = "bearer"  
+
+        self.token_type = "bearer"
