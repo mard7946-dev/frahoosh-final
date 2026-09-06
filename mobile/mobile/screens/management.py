@@ -190,6 +190,31 @@ class ManagementScreen(Screen):
         key
     ):
 
+        if key == "settings":
+
+            if not self.manager.has_screen(
+                "settings"
+            ):
+
+                from mobile.screens.settings import (
+                    SettingsScreen
+                )
+
+                self.manager.add_widget(
+                    SettingsScreen(
+                        self.app_state,
+                        name="settings"
+                    )
+                )
+
+
+            self.manager.current = (
+                "settings"
+            )
+
+            return
+
+
         print(
             "MANAGEMENT PANEL:",
             key
