@@ -1,264 +1,151 @@
-from pathlib import Path
-
-from kivy.core.text import LabelBase
-from kivy.graphics import Color, RoundedRectangle, Line
-from kivy.uix.widget import Widget
-from kivy.uix.textinput import TextInput
-
-from mobile.config import (
-    FONT_REGULAR,
-    FONT_BOLD,
-    CARD,
-    BORDER,
+from kivy.app import App
+from kivy.core.window import Window
+from kivy.uix.screenmanager import (
+    ScreenManager,
+    FadeTransition,
 )
 
+from mobile.ui import register_fonts
 
-_FONT_REGISTERED = False
 
+class FrahooshMobileApp(App):
 
-def register_fonts():
+    title = "فراهوش"
 
-    global _FONT_REGISTERED
+    def build(self):
 
-    if _FONT_REGISTERED:
-        return "Frahoosh"
-
-    regular = Path(FONT_REGULAR)
-    bold = Path(FONT_BOLD)
-
-    if not regular.is_file():
-
-        print(
-            "FONT FILE NOT FOUND:",
-            regular
+        Window.clearcolor = (
+            0.965,
+            0.975,
+            0.985,
+            1
         )
 
-        return ""
+        try:
+            register_fonts()
+        except Exception as exc:
+            print(
+                "FONT ERROR:",
+                repr(exc)
+            )
 
-    try:
+        try:
 
-        LabelBase.register(
-            name="Frahoosh",
-            fn_regular=str(regular),
-            fn_bold=str(
-                bold
-                if bold.is_file()
-                else regular
-            ),
-        )
+            from mobile.services.app_state import (
+                AppState
+            )
 
-        _FONT_REGISTERED = True
+            self.state = AppState()
 
-        return "Frahoosh"
+        except Exception as exc:
 
+            print(
+                "APP STATE ERROR:",
+                repr(exc)
+            )
 
-    except Exception as exc:
+            self.state = None
 
-        print(
-            "FONT REGISTER ERROR:",
-            repr(exc)
-        )
-
-        return ""
-
-
-
-def font_name():
-
-    if register_fonts():
-
-        return "Frahoosh"
-
-    return "Roboto"
-
-
-
-def rtl_text(value):
-
-    text = str(value or "")
-
-
-    text = text.replace(
-        "ي",
-        "ی"
-    )
-
-    text = text.replace(
-        "ى",
-        "ی"
-    )
-
-    text = text.replace(
-        "ك",
-        "ک"
-    )
-
-    text = text.replace(
-        "ۀ",
-        "هٔ"
-    )
-
-    text = text.replace(
-        "ة",
-        "ه"
-    )
-
-
-    try:
-
-        import arabic_reshaper
-
-        from bidi.algorithm import (
-            get_display
-        )
-
-
-        reshaped = (
-            arabic_reshaper.reshape(
-                text
+        manager = ScreenManager(
+            transition=FadeTransition(
+                duration=0.12
             )
         )
 
+        try:
 
-        return get_display(
-            reshaped
-        )
-
-
-    except Exception as exc:
-
-        print(
-            "RTL RENDER ERROR:",
-            repr(exc)
-        )
-
-        return text
-
-
-
-class PersianTextInput(TextInput):
-
-    def __init__(self, **kwargs):
-
-        register_fonts()
-
-        kwargs.setdefault(
-            "font_name",
-            font_name()
-        )
-
-        kwargs.setdefault(
-            "halign",
-            "right"
-        )
-
-        kwargs.setdefault(
-            "multiline",
-            False
-        )
-
-        kwargs.setdefault(
-            "cursor_width",
-            2
-        )
-
-
-        super().__init__(
-            **kwargs
-        )
-
-
-
-class Card(Widget):
-
-    def __init__(
-        self,
-        radius=18,
-        **kwargs
-    ):
-
-        super().__init__(
-            **kwargs
-        )
-
-
-        with self.canvas.before:
-
-
-            self._color = Color(
-                *CARD
+            from mobile.screens.login import (
+                LoginScreen
             )
 
-
-            self._rect = RoundedRectangle(
-
-                pos=self.pos,
-
-                size=self.size,
-
-                radius=[
-                    radius
-                ],
-
+            manager.add_widget(
+                LoginScreen(
+                    self.state,
+                    name="login"
+                )
             )
 
+        except Exception as exc:
 
-            self._line_color = Color(
-                *BORDER
+            print(
+                "LOGIN SCREEN ERROR:",
+                repr(exc)
             )
 
+        try:
 
-            self._line = Line(
-
-                rounded_rectangle=(
-
-                    self.x,
-
-                    self.y,
-
-                    self.width,
-
-                    self.height,
-
-                    radius,
-
-                ),
-
-                width=0.8,
-
+            from mobile.screens.dashboard import (
+                DashboardScreen
             )
 
+            manager.add_widget(
+                DashboardScreen(
+                    self.state,
+                    name="dashboard"
+                )
+            )
 
-        self.bind(
-            pos=self._sync,
-            size=self._sync,
-        )
+        except Exception as exc:
+
+            print(
+                "DASHBOARD SCREEN ERROR:",
+                repr(exc)
+            )
+
+        try:
+
+            from mobile.screens.module import (
+                ModuleScreen
+            )
+
+            manager.add_widget(
+                ModuleScreen(
+                    self.state,
+                    name="module"
+                )
+            )
+
+        except Exception as exc:
+
+            print(
+                "MODULE SCREEN ERROR:",
+                repr(exc)
+            )
+
+        try:
+
+            from mobile.screens.update import (
+                UpdateScreen
+            )
+
+            manager.add_widget(
+                UpdateScreen(
+                    self.state,
+                    name="update"
+                )
+            )
+
+        except Exception as exc:
+
+            print(
+                "UPDATE SCREEN ERROR:",
+                repr(exc)
+            )
+
+        if manager.has_screen(
+            "login"
+        ):
+
+            manager.current = "login"
+
+        elif manager.screen_names:
+
+            manager.current = (
+                manager.screen_names[0]
+            )
+
+        return manager
 
 
-
-    def _sync(self, *_):
-
-        self._rect.pos = self.pos
-
-        self._rect.size = self.size
-
-
-        r = (
-            self._line
-            .rounded_rectangle[4]
-        )
-
-
-        self._line.rounded_rectangle = (
-
-            self.x,
-
-            self.y,
-
-            self.width,
-
-            self.height,
-
-            r,
-
-        )      
+if __name__ == "__main__":
+    FrahooshMobileApp().run()
