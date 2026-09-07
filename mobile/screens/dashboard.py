@@ -1,24 +1,22 @@
-from kivy.clock import Clock
-from kivy.animation import Animation
-
 from kivy.uix.screenmanager import Screen
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
 from kivy.uix.button import Button
-from kivy.uix.popup import Popup
+from kivy.uix.image import Image
+from kivy.animation import Animation
+from kivy.clock import Clock
 from kivy.metrics import dp
 
-from kivy.graphics import Color, RoundedRectangle
 
 from mobile.config import (
     APP_NAME,
     SCHOOL_NAME,
     PRIMARY,
     SECONDARY,
-    SUCCESS,
     WHITE,
 )
+
 
 from mobile.ui import (
     font_name,
@@ -27,9 +25,20 @@ from mobile.ui import (
 
 
 
+INFO_TEXTS = [
+
+    "فراهوش مدیریت مدرسه را هوشمند و یکپارچه می‌کند.",
+
+    "آیا می‌دانید با فراهوش ارتباط مدرسه و خانواده سریع‌تر می‌شود؟",
+
+    "آیا می‌دانید گزارش‌های آموزشی می‌توانند هوشمند تحلیل شوند؟",
+
+]
+
+
 MENU_ITEMS_MANAGER = [
 
-    ("مدیریت مدرسه", "management"),
+    ("مدیریت", "management"),
 
     ("معاون آموزشی", "education"),
 
@@ -60,111 +69,96 @@ MENU_ITEMS_MANAGER = [
 ]
 
 
-INFO_TEXTS = [
-
-    "آیا می‌دانید فراهوش می‌تواند مدیریت مدرسه را هوشمندتر، سریع‌تر و دقیق‌تر کند؟",
-
-    "آیا می‌دانید مدیر مدرسه می‌تواند همه بخش‌های آموزشی و اجرایی را یکپارچه مدیریت کند؟",
-
-    "آیا می‌دانید اولیا می‌توانند ارتباط بهتر و سریع‌تری با مدرسه داشته باشند؟",
-
-    "آیا می‌دانید هوش مصنوعی فراهوش در تحلیل آموزشی به مدرسه کمک می‌کند؟",
-
-    "آیا می‌دانید کلاس آنلاین و تابلو هوشمند بخشی از سامانه یکپارچه فراهوش هستند؟",
-
-]
-
-
-class RoundedCard(BoxLayout):
-
-    def __init__(self, **kwargs):
-
-        super().__init__(**kwargs)
-
-        with self.canvas.before:
-
-            Color(
-                1,
-                1,
-                1,
-                0.90
-            )
-
-            self.rect = RoundedRectangle(
-                radius=[
-                    dp(20)
-                ]
-            )
-
-        self.bind(
-            pos=self.update_rect,
-            size=self.update_rect
-        )
-
-
-    def update_rect(
-        self,
-        *args
-    ):
-
-        self.rect.pos = self.pos
-        self.rect.size = self.size
-
-
 
 class DashboardScreen(Screen):
 
 
-    def __init__(
-        self,
-        app_state,
-        **kwargs
-    ):
+    def __init__(self, app_state, **kwargs):
 
-        super().__init__(
-            **kwargs
-        )
+        super().__init__(**kwargs)
 
         self.app_state = app_state
 
-        self.text_index = 0
+        self.menu_open = False
+
+        self.info_index = 0
 
         self.char_index = 0
 
-        self.current_text = ""
-
-        self.menu_open = False
-
         self.build()
+
 
     def build(self):
 
-        root = FloatLayout()
+        self.root_box = FloatLayout()
 
 
-        # =========================
-        # BACKGROUND
-        # =========================
+        # بک گراند موقت
+        # بعداً تصویر نهایی جایگزین می‌شود
 
-        with root.canvas.before:
-
-            Color(
-                0.94,
-                0.97,
-                1,
-                1
+        self.root_box.add_widget(
+            Label(
+                text="",
+                size_hint=(1,1)
             )
-
-            self.background = RoundedRectangle(
-                radius=[
-                    dp(0)
-                ]
-            )
+        )
 
 
-        # =========================
-        # HEADER
-        # =========================
+        self.create_header()
+
+
+        self.create_info_card()
+
+
+        self.create_bottom_cards()
+
+
+        self.add_widget(
+            self.root_box
+        )
+
+
+        Clock.schedule_interval(
+            self.type_writer,
+            0.08
+        )
+
+
+        Animation(
+            opacity=1,
+            duration=1
+        ).start(
+            self.root_box
+        )
+
+           # =========================
+    # HEADER
+    # =========================
+
+    def create_header(self):
+
+
+        self.header_box = BoxLayout(
+
+            orientation="horizontal",
+
+            size_hint=(1, None),
+
+            height=dp(75),
+
+            pos_hint={
+                "top":1
+            },
+
+            padding=[
+                dp(15),
+                dp(10)
+            ]
+
+        )
+
+
+        # سه خط واقعی
 
         self.menu_button = Button(
 
@@ -185,121 +179,97 @@ class DashboardScreen(Screen):
 
             color=PRIMARY,
 
-            size_hint=(
-                None,
-                None
-            ),
+            size_hint_x=None,
 
-            size=(
-                dp(60),
-                dp(60)
-            ),
-
-            pos_hint={
-                "right": 1,
-                "top": 1
-            }
+            width=dp(60)
 
         )
 
 
         self.menu_button.bind(
+
             on_release=self.toggle_menu
+
         )
 
 
-        root.add_widget(
+        self.header_title = Label(
+
+            text=rtl_text(
+
+                f"{APP_NAME}\n"
+                f"سامانه هوشمند مدیریت مدرسه\n"
+                f"{SCHOOL_NAME}"
+
+            ),
+
+            font_name=font_name(),
+
+            font_size="16sp",
+
+            color=PRIMARY,
+
+            halign="right",
+
+            valign="middle"
+
+        )
+
+
+        self.header_title.bind(
+
+            size=self.header_title.setter(
+                "text_size"
+            )
+
+        )
+
+
+        self.header_box.add_widget(
+
             self.menu_button
+
         )
 
 
-        self.title_box = BoxLayout(
+        self.header_box.add_widget(
+
+            self.header_title
+
+        )
+
+
+        self.root_box.add_widget(
+
+            self.header_box
+
+        )
+
+
+    # =========================
+    # INFO CARD
+    # =========================
+
+    def create_info_card(self):
+
+
+        self.info_card = BoxLayout(
 
             orientation="vertical",
 
-            size_hint=(
-                1,
-                None
-            ),
+            size_hint=(0.85, None),
 
-            height=dp(100),
+            height=dp(150),
 
             pos_hint={
+
                 "center_x":0.5,
-                "top":0.95
-            }
 
-        )
-
-
-        title = Label(
-
-            text=rtl_text(
-                "سامانه هوشمند مدیریت مدرسه"
-            ),
-
-            font_name=font_name(),
-
-            font_size="22sp",
-
-            color=PRIMARY
-
-        )
-
-
-        school = Label(
-
-            text=rtl_text(
-                SCHOOL_NAME
-            ),
-
-            font_name=font_name(),
-
-            font_size="15sp",
-
-            color=SECONDARY
-
-        )
-
-
-        self.title_box.add_widget(
-            title
-        )
-
-        self.title_box.add_widget(
-            school
-        )
-
-
-        root.add_widget(
-            self.title_box
-        )
-
-
-        # =========================
-        # INFO CARD
-        # =========================
-
-
-        self.info_card = RoundedCard(
-
-            orientation="vertical",
-
-            padding=dp(20),
-
-            spacing=dp(10),
-
-            size_hint=(
-                .86,
-                None
-            ),
-
-            height=dp(180),
-
-            pos_hint={
-                "center_x":0.5,
                 "center_y":0.55
-            }
+
+            },
+
+            padding=dp(15)
 
         )
 
@@ -307,18 +277,16 @@ class DashboardScreen(Screen):
         self.info_title = Label(
 
             text=rtl_text(
+
                 "✨ آیا می‌دانید..."
+
             ),
 
             font_name=font_name(),
 
-            font_size="18sp",
+            font_size="20sp",
 
-            color=PRIMARY,
-
-            size_hint_y=None,
-
-            height=dp(40)
+            color=PRIMARY
 
         )
 
@@ -341,135 +309,59 @@ class DashboardScreen(Screen):
 
 
         self.info_text.bind(
-            size=lambda instance, value:
-            setattr(
-                instance,
-                "text_size",
-                value
+
+            size=self.info_text.setter(
+                "text_size"
             )
+
         )
 
 
         self.info_card.add_widget(
+
             self.info_title
+
         )
 
 
         self.info_card.add_widget(
+
             self.info_text
+
         )
 
 
-        root.add_widget(
+        self.root_box.add_widget(
+
             self.info_card
-        )
-
-
-        # =========================
-        # FEATURE CARDS
-        # =========================
-
-
-        features = BoxLayout(
-
-            orientation="horizontal",
-
-            spacing=dp(8),
-
-            size_hint=(
-                .9,
-                None
-            ),
-
-            height=dp(80),
-
-            pos_hint={
-                "center_x":0.5,
-                "y":0.08
-            }
 
         )
 
-
-        items = [
-
-            "🤖\nهوش مصنوعی",
-
-            "📚\nمدیریت آموزشی",
-
-            "🎥\nکلاس آنلاین",
-
-        ]
-
-
-        for item in items:
-
-            card = Button(
-
-                text=rtl_text(item),
-
-                font_name=font_name(),
-
-                font_size="13sp",
-
-                background_normal="",
-
-                background_color=(
-                    SECONDARY
-                ),
-
-                color=WHITE
-
-            )
-
-            features.add_widget(
-                card
-            )
-
-
-        root.add_widget(
-            features
-        )
-
-
-        self.add_widget(
-            root
-        )
-
-
-        Clock.schedule_interval(
-            self.type_effect,
-            0.08
-        )
 
 
     # =========================
-    # TYPE EFFECT
+    # TYPE WRITER
     # =========================
 
-    def type_effect(
-        self,
-        dt
-    ):
-
-        if self.text_index >= len(INFO_TEXTS):
-
-            self.text_index = 0
+    def type_writer(self, dt):
 
 
-        full_text = INFO_TEXTS[
-            self.text_index
+        if self.info_index >= len(INFO_TEXTS):
+
+            self.info_index = 0
+
+
+        text = INFO_TEXTS[
+            self.info_index
         ]
 
 
-        if self.char_index <= len(full_text):
-
-            self.current_text = (
-                full_text[:self.char_index]
-            )
+        if self.char_index < len(text):
 
             self.info_text.text = rtl_text(
-                self.current_text
+
+                text[:self.char_index]
+
             )
 
             self.char_index += 1
@@ -479,18 +371,85 @@ class DashboardScreen(Screen):
 
             self.char_index = 0
 
-            self.text_index += 1
+            self.info_index += 1
 
 
 
     # =========================
-    # SIDE MENU
+    # BOTTOM CARDS
     # =========================
 
-    def toggle_menu(
-        self,
-        *_ 
-    ):
+    def create_bottom_cards(self):
+
+
+        bottom = BoxLayout(
+
+            orientation="horizontal",
+
+            spacing=dp(10),
+
+            size_hint=(0.9,None),
+
+            height=dp(80),
+
+            pos_hint={
+
+                "center_x":0.5,
+
+                "y":0.05
+
+            }
+
+        )
+
+
+        cards = [
+
+            "هوش مصنوعی",
+
+            "کلاس آنلاین",
+
+            "مدیریت هوشمند"
+
+        ]
+
+
+        for item in cards:
+
+
+            card = Button(
+
+                text=rtl_text(item),
+
+                font_name=font_name(),
+
+                background_normal="",
+
+                background_color=SECONDARY,
+
+                color=WHITE
+
+            )
+
+
+            bottom.add_widget(
+
+                card
+
+            )
+
+
+        self.root_box.add_widget(
+
+            bottom
+
+        )
+
+            # =========================
+    # DRAWER MENU
+    # =========================
+
+    def toggle_menu(self, *_):
 
         if self.menu_open:
 
@@ -502,14 +461,18 @@ class DashboardScreen(Screen):
 
 
 
-    def open_menu(
-        self
-    ):
-
-        self.menu_open = True
+    def open_menu(self):
 
 
-        self.menu_box = BoxLayout(
+        if hasattr(
+            self,
+            "drawer"
+        ):
+
+            return
+
+
+        self.drawer = BoxLayout(
 
             orientation="vertical",
 
@@ -517,40 +480,16 @@ class DashboardScreen(Screen):
 
             padding=dp(12),
 
-            size_hint=(
-                None,
-                1
-            ),
-
-            width=dp(280),
+            size_hint=(0.75,1),
 
             pos_hint={
-                "left":0,
+
+                "right":1,
+
                 "top":1
+
             }
 
-        )
-
-
-        with self.menu_box.canvas.before:
-
-            Color(
-                1,
-                1,
-                1,
-                .96
-            )
-
-            self.menu_background = RoundedRectangle(
-                radius=[
-                    dp(20)
-                ]
-            )
-
-
-        self.menu_box.bind(
-            pos=self.update_menu_bg,
-            size=self.update_menu_bg
         )
 
 
@@ -559,32 +498,39 @@ class DashboardScreen(Screen):
 
         if self.app_state:
 
-            role = getattr(
-                self.app_state,
-                "role",
-                "student"
-            )
+            role = self.app_state.role
 
 
-        # مدیر همه را می‌بیند
 
-        if role in [
+        items = []
+
+
+        if role in (
             "manager",
             "admin"
-        ]:
+        ):
 
             items = MENU_ITEMS_MANAGER
 
 
         else:
 
-            items = self.get_user_menu(
-                role
-            )
+            items = [
+
+                ("پروفایل من","profile"),
+
+                ("اطلاعات من","info"),
+
+                ("پیام‌ها","messages"),
+
+                ("تنظیمات","settings"),
+
+            ]
 
 
 
         for title, key in items:
+
 
             btn = Button(
 
@@ -606,170 +552,165 @@ class DashboardScreen(Screen):
 
 
             btn.bind(
-                on_release=lambda x, k=key, t=title:
-                self.select_menu(
-                    t,
-                    k
-                )
+
+                on_release=lambda x,t=title,k=key:
+
+                self.open_panel(t,k)
+
             )
 
 
-            self.menu_box.add_widget(
+            self.drawer.add_widget(
+
                 btn
+
             )
 
 
-        self.add_widget(
-            self.menu_box
+        self.root_box.add_widget(
+
+            self.drawer
+
         )
+
+
+        self.menu_open = True
+
 
 
         Animation(
-            x=0,
-            duration=.25
+
+            opacity=1,
+
+            duration=0.3
+
         ).start(
-            self.menu_box
+
+            self.drawer
+
         )
 
 
 
-    def update_menu_bg(
-        self,
-        *args
-    ):
+
+
+    def close_menu(self):
+
 
         if hasattr(
+
             self,
-            "menu_background"
+
+            "drawer"
+
         ):
 
-            self.menu_background.pos = (
-                self.menu_box.pos
+
+            self.root_box.remove_widget(
+
+                self.drawer
+
             )
 
-            self.menu_background.size = (
-                self.menu_box.size
-            )
 
-
-
-    def close_menu(
-        self
-    ):
-
-        if hasattr(
-            self,
-            "menu_box"
-        ):
-
-            self.remove_widget(
-                self.menu_box
-            )
+            self.drawer = None
 
 
         self.menu_open = False
 
 
 
-    # =========================
-    # USER MENUS
-    # =========================
-
-    def get_user_menu(
-        self,
-        role
-    ):
-
-
-        menus = {
-
-            "student":[
-
-                ("پروفایل من","profile"),
-
-                ("کلاس من","classes"),
-
-                ("برنامه هفتگی","schedule"),
-
-                ("نمرات","grades"),
-
-                ("کارنامه","report"),
-
-                ("کلاس آنلاین","online")
-
-            ],
-
-
-            "parent":[
-
-                ("فرزند من","child"),
-
-                ("وضعیت تحصیلی","status"),
-
-                ("پرداخت‌ها","payments"),
-
-                ("پیام‌های مدرسه","messages")
-
-            ],
-
-
-            "teacher":[
-
-                ("کلاس‌های من","classes"),
-
-                ("ثبت نمرات","grades"),
-
-                ("حضور و غیاب","attendance"),
-
-                ("پیام‌ها","messages")
-
-            ]
-
-        }
-
-
-        return menus.get(
-            role,
-            menus["student"]
-        )
-
 
 
     # =========================
-    # MENU CLICK
+    # OPEN MODULE
     # =========================
 
-    def select_menu(
+    def open_panel(
         self,
         title,
         key
     ):
 
+
         self.close_menu()
 
 
-        print(
-            "OPEN PANEL:",
-            title,
-            key
+        if key == "management":
+
+
+            if not self.manager.has_screen(
+                "management"
+            ):
+
+                from mobile.screens.management import (
+                    ManagementScreen
+                )
+
+
+                self.manager.add_widget(
+
+                    ManagementScreen(
+
+                        self.app_state,
+
+                        name="management"
+
+                    )
+
+                )
+
+
+            self.manager.current = "management"
+
+            return
+
+
+
+        # بقیه پنل‌ها فعلاً از مسیر module عبور می‌کنند
+
+        if not self.manager.has_screen(
+            "module"
+        ):
+
+
+            from mobile.screens.module import (
+                ModuleScreen
+            )
+
+
+            self.manager.add_widget(
+
+                ModuleScreen(
+
+                    self.app_state,
+
+                    name="module"
+
+                )
+
+            )
+
+
+
+        module = self.manager.get_screen(
+            "module"
         )
 
 
-        # فعلاً اتصال پنل‌ها
-        # در مرحله بعد اضافه می‌شود
+        module.show_module(
+
+            title,
+
+            key,
+
+            self.app_state.role
+
+        )
 
 
+        self.manager.current = "module"
 
-    # =========================
-    # REFRESH
-    # =========================
-
-    def on_pre_enter(
-        self
-    ):
-
-        self.text_index = 0
-
-        self.char_index = 0
-
-
+                
+                    
+                
