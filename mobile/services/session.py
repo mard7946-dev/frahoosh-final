@@ -3,18 +3,7 @@ import os
 from pathlib import Path
 
 
-# ============================================================
-# Frahoosh Mobile
-# Android-safe Session Storage
-# ============================================================
-
 def _session_file():
-    """
-    محل امن ذخیره Session.
-
-    روی Android نباید کنار سورس برنامه بنویسیم.
-    Kivy App.user_data_dir محل مناسب و قابل نوشتن است.
-    """
 
     try:
         from kivy.app import App
@@ -22,29 +11,43 @@ def _session_file():
         app = App.get_running_app()
 
         if app is not None:
-            base = Path(app.user_data_dir)
+            base = Path(
+                app.user_data_dir
+            )
         else:
-            base = Path.home() / ".frahoosh"
+            base = (
+                Path.home()
+                / ".frahoosh"
+            )
 
     except Exception:
-        base = Path.home() / ".frahoosh"
+        base = (
+            Path.home()
+            / ".frahoosh"
+        )
 
-    base.mkdir(
-        parents=True,
-        exist_ok=True
-    )
+    try:
+        base.mkdir(
+            parents=True,
+            exist_ok=True
+        )
+    except Exception:
+        pass
 
     return base / "session.json"
 
 
-def _atomic_write(path, content):
-    """
-    نوشتن امن Session.
-    """
+def _atomic_write(
+    path,
+    content
+):
 
-    temp = path.with_suffix(".tmp")
+    temp = path.with_suffix(
+        ".tmp"
+    )
 
     try:
+
         temp.write_text(
             content,
             encoding="utf-8"
@@ -57,89 +60,93 @@ def _atomic_write(path, content):
 
         return True
 
-    except OSError:
+    except Exception as exc:
+
+        print(
+            "SESSION WRITE ERROR:",
+            repr(exc)
+        )
 
         try:
             if temp.exists():
                 temp.unlink()
-        except OSError:
+        except Exception:
             pass
 
         return False
 
 
-def save_session(data: dict):
-    """
-    ذخیره نشست کاربر.
-    """
+def save_session(data):
 
-    if not isinstance(data, dict):
+    if not isinstance(
+        data,
+        dict
+    ):
         return False
 
     try:
-
-        session_file = _session_file()
 
         content = json.dumps(
             data,
             ensure_ascii=False,
-            separators=(",", ":")
+            separators=(
+                ",",
+                ":"
+            )
         )
 
         return _atomic_write(
-            session_file,
+            _session_file(),
             content
         )
 
-    except (
-        OSError,
-        TypeError,
-        ValueError
-    ):
+    except Exception as exc:
+
+        print(
+            "SAVE SESSION ERROR:",
+            repr(exc)
+        )
+
         return False
 
 
 def load_session():
-    """
-    بازیابی نشست قبلی کاربر.
-
-    Session خراب یا بدون Access Token
-    معتبر محسوب نمی‌شود.
-    """
 
     try:
 
-        session_file = _session_file()
+        path = _session_file()
 
-        if not session_file.exists():
+        if not path.exists():
             return None
 
-        raw = session_file.read_text(
+        raw = path.read_text(
             encoding="utf-8"
         )
 
-        data = json.loads(raw)
-
-        if not isinstance(data, dict):
-            return None
-
-        access_token = data.get(
-            "access_token"
+        data = json.loads(
+            raw
         )
 
-        if not access_token:
+        if not isinstance(
+            data,
+            dict
+        ):
+            return None
+
+        if not data.get(
+            "access_token"
+        ):
             return None
 
         return data
 
-    except (
-        FileNotFoundError,
-        json.JSONDecodeError,
-        UnicodeDecodeError,
-        OSError,
-        TypeError,
-        ValueError
-    ):
+    except Exception as exc:
+
+        print(
+            "LOAD SESSION ERROR:",
+            repr(exc)
+        )
+
         return None
 
 
@@ -150,46 +157,58 @@ def update_session_tokens(
     expires_at=None,
     token_type=None
 ):
-    """
-    به‌روزرسانی Tokenهای نشست.
-    """
 
-    session = load_session()
-
-    if not isinstance(session, dict):
-        session = {}
+    session = (
+        load_session()
+        or {}
+    )
 
     if access_token:
-        session["access_token"] = access_token
+        session[
+            "access_token"
+        ] = access_token
 
     if refresh_token:
-        session["refresh_token"] = refresh_token
+        session[
+            "refresh_token"
+        ] = refresh_token
 
     if expires_in is not None:
-        session["expires_in"] = expires_in
+        session[
+            "expires_in"
+        ] = expires_in
 
     if expires_at is not None:
-        session["expires_at"] = expires_at
+        session[
+            "expires_at"
+        ] = expires_at
 
     if token_type:
-        session["token_type"] = token_type
+        session[
+            "token_type"
+        ] = token_type
 
-    return save_session(session)
+    return save_session(
+        session
+    )
 
 
 def clear_session():
-    """
-    حذف کامل Session.
-    """
 
     try:
 
-        session_file = _session_file()
+        path = _session_file()
 
-        if session_file.exists():
-            session_file.unlink()
+        if path.exists():
+            path.unlink()
 
         return True
 
-    except OSError:
-        return False          
+    except Exception as exc:
+
+        print(
+            "CLEAR SESSION ERROR:",
+            repr(exc)
+        )
+
+        return False
