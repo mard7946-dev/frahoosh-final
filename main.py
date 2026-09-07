@@ -1,59 +1,264 @@
-from kivy.app import App
-from kivy.core.window import Window
-from kivy.uix.screenmanager import ScreenManager
+from pathlib import Path
 
-from mobile.ui import register_fonts
+from kivy.core.text import LabelBase
+from kivy.graphics import Color, RoundedRectangle, Line
+from kivy.uix.widget import Widget
+from kivy.uix.textinput import TextInput
+
+from mobile.config import (
+    FONT_REGULAR,
+    FONT_BOLD,
+    CARD,
+    BORDER,
+)
 
 
-class FrahooshMobileApp(App):
+_FONT_REGISTERED = False
 
-    title = "فراهوش"
 
-    def build(self):
-        Window.clearcolor = (0.965, 0.975, 0.985, 1)
+def register_fonts():
 
-        try:
-            register_fonts()
-        except Exception as exc:
-            print("FONT ERROR:", repr(exc))
+    global _FONT_REGISTERED
 
-        try:
-            from mobile.services.app_state import AppState
-            self.state = AppState()
-        except Exception as exc:
-            print("APP STATE ERROR:", repr(exc))
-            self.state = None
+    if _FONT_REGISTERED:
+        return "Frahoosh"
 
-        manager = ScreenManager()
+    regular = Path(FONT_REGULAR)
+    bold = Path(FONT_BOLD)
 
-        from mobile.screens.login import LoginScreen
-        from mobile.screens.dashboard import DashboardScreen
-        from mobile.screens.module import ModuleScreen
+    if not regular.is_file():
 
-        manager.add_widget(
-            LoginScreen(self.state, name="login")
+        print(
+            "FONT FILE NOT FOUND:",
+            regular
         )
 
-        manager.add_widget(
-            DashboardScreen(self.state, name="dashboard")
+        return ""
+
+    try:
+
+        LabelBase.register(
+            name="Frahoosh",
+            fn_regular=str(regular),
+            fn_bold=str(
+                bold
+                if bold.is_file()
+                else regular
+            ),
         )
 
-        manager.add_widget(
-            ModuleScreen(self.state, name="module")
+        _FONT_REGISTERED = True
+
+        return "Frahoosh"
+
+
+    except Exception as exc:
+
+        print(
+            "FONT REGISTER ERROR:",
+            repr(exc)
         )
 
-        try:
-            from mobile.screens.update import UpdateScreen
-            manager.add_widget(
-                UpdateScreen(self.state, name="update")
+        return ""
+
+
+
+def font_name():
+
+    if register_fonts():
+
+        return "Frahoosh"
+
+    return "Roboto"
+
+
+
+def rtl_text(value):
+
+    text = str(value or "")
+
+
+    text = text.replace(
+        "ي",
+        "ی"
+    )
+
+    text = text.replace(
+        "ى",
+        "ی"
+    )
+
+    text = text.replace(
+        "ك",
+        "ک"
+    )
+
+    text = text.replace(
+        "ۀ",
+        "هٔ"
+    )
+
+    text = text.replace(
+        "ة",
+        "ه"
+    )
+
+
+    try:
+
+        import arabic_reshaper
+
+        from bidi.algorithm import (
+            get_display
+        )
+
+
+        reshaped = (
+            arabic_reshaper.reshape(
+                text
             )
-        except Exception as exc:
-            print("UPDATE SCREEN ERROR:", repr(exc))
-
-        manager.current = "login"
-
-        return manager
+        )
 
 
-if __name__ == "__main__":
-    FrahooshMobileApp().run()
+        return get_display(
+            reshaped
+        )
+
+
+    except Exception as exc:
+
+        print(
+            "RTL RENDER ERROR:",
+            repr(exc)
+        )
+
+        return text
+
+
+
+class PersianTextInput(TextInput):
+
+    def __init__(self, **kwargs):
+
+        register_fonts()
+
+        kwargs.setdefault(
+            "font_name",
+            font_name()
+        )
+
+        kwargs.setdefault(
+            "halign",
+            "right"
+        )
+
+        kwargs.setdefault(
+            "multiline",
+            False
+        )
+
+        kwargs.setdefault(
+            "cursor_width",
+            2
+        )
+
+
+        super().__init__(
+            **kwargs
+        )
+
+
+
+class Card(Widget):
+
+    def __init__(
+        self,
+        radius=18,
+        **kwargs
+    ):
+
+        super().__init__(
+            **kwargs
+        )
+
+
+        with self.canvas.before:
+
+
+            self._color = Color(
+                *CARD
+            )
+
+
+            self._rect = RoundedRectangle(
+
+                pos=self.pos,
+
+                size=self.size,
+
+                radius=[
+                    radius
+                ],
+
+            )
+
+
+            self._line_color = Color(
+                *BORDER
+            )
+
+
+            self._line = Line(
+
+                rounded_rectangle=(
+
+                    self.x,
+
+                    self.y,
+
+                    self.width,
+
+                    self.height,
+
+                    radius,
+
+                ),
+
+                width=0.8,
+
+            )
+
+
+        self.bind(
+            pos=self._sync,
+            size=self._sync,
+        )
+
+
+
+    def _sync(self, *_):
+
+        self._rect.pos = self.pos
+
+        self._rect.size = self.size
+
+
+        r = (
+            self._line
+            .rounded_rectangle[4]
+        )
+
+
+        self._line.rounded_rectangle = (
+
+            self.x,
+
+            self.y,
+
+            self.width,
+
+            self.height,
+
+            r,
+
+        )      
