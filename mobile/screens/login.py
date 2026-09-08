@@ -190,8 +190,7 @@ class LoginScreen(Screen):
         root.add_widget(
             Label(
                 text=rtl_text(
-                    "نام کاربری: کد ملی\n"
-                    "رمز عبور پیش‌فرض: حرف اول نام + کد ملی"
+                    "ورود امن کاربران فراهوش"
                 ),
                 font_name=font_name(),
                 font_size="12sp",
