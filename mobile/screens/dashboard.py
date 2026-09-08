@@ -14,6 +14,7 @@ from kivy.uix.label import Label
 from kivy.uix.screenmanager import Screen
 from kivy.uix.widget import Widget
 from kivy.uix.scrollview import ScrollView
+from kivy.uix.boxlayout import BoxLayout
 
 from mobile.config import (
     APP_NAME,
