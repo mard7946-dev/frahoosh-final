@@ -42,6 +42,7 @@ class LoginScreen(Screen):
 
         self._build()
 
+
     def _build(self):
 
         root = BoxLayout(
@@ -50,11 +51,10 @@ class LoginScreen(Screen):
             spacing=dp(12),
         )
 
+
         root.add_widget(
             Label(
-                text=rtl_text(
-                    APP_NAME
-                ),
+                text=rtl_text(APP_NAME),
                 font_name=font_name(),
                 font_size="36sp",
                 bold=True,
@@ -64,11 +64,10 @@ class LoginScreen(Screen):
             )
         )
 
+
         root.add_widget(
             Label(
-                text=rtl_text(
-                    SYSTEM_TITLE
-                ),
+                text=rtl_text(SYSTEM_TITLE),
                 font_name=font_name(),
                 font_size="17sp",
                 color=SECONDARY,
@@ -77,11 +76,10 @@ class LoginScreen(Screen):
             )
         )
 
+
         root.add_widget(
             Label(
-                text=rtl_text(
-                    SCHOOL_NAME
-                ),
+                text=rtl_text(SCHOOL_NAME),
                 font_name=font_name(),
                 font_size="13sp",
                 color=PRIMARY,
@@ -90,19 +88,6 @@ class LoginScreen(Screen):
             )
         )
 
-        root.add_widget(
-            Label(
-                text=rtl_text(
-                    "ورود کاربران"
-                ),
-                font_name=font_name(),
-                font_size="20sp",
-                color=PRIMARY,
-                bold=True,
-                size_hint_y=None,
-                height=dp(42),
-            )
-        )
 
         self.identifier = PersianTextInput(
             hint_text=rtl_text(
@@ -113,11 +98,8 @@ class LoginScreen(Screen):
             size_hint_y=None,
             height=dp(54),
             halign="right",
-            padding=[
-                dp(14),
-                dp(14),
-            ],
         )
+
 
         self.password = PersianTextInput(
             hint_text=rtl_text(
@@ -128,31 +110,23 @@ class LoginScreen(Screen):
             size_hint_y=None,
             height=dp(54),
             halign="right",
-            padding=[
-                dp(14),
-                dp(14),
-            ],
         )
+
 
         self.status = Label(
             text="",
             font_name=font_name(),
             font_size="13sp",
             color=SECONDARY,
-            halign="center",
-            valign="middle",
             size_hint_y=None,
             height=dp(55),
         )
 
+
         self.status.bind(
-            size=lambda obj, value:
-            setattr(
-                obj,
-                "text_size",
-                value
-            )
+            size=self._sync_text
         )
+
 
         self.login_button = Button(
             text=rtl_text(
@@ -167,9 +141,11 @@ class LoginScreen(Screen):
             height=dp(56),
         )
 
+
         self.login_button.bind(
             on_release=self.login
         )
+
 
         root.add_widget(
             self.identifier
@@ -187,22 +163,20 @@ class LoginScreen(Screen):
             self.login_button
         )
 
-        root.add_widget(
-            Label(
-                text=rtl_text(
-                    "ورود امن کاربران فراهوش"
-                ),
-                font_name=font_name(),
-                font_size="12sp",
-                color=SECONDARY,
-                halign="center",
-                valign="middle",
-            )
-        )
 
         self.add_widget(
             root
         )
+
+
+    def _sync_text(
+        self,
+        obj,
+        value
+    ):
+
+        obj.text_size = value
+
 
     def _set_status(
         self,
@@ -216,37 +190,43 @@ class LoginScreen(Screen):
 
         self.status.color = color
 
-    def login(self, *_):
+
+
+    def login(
+        self,
+        *_ 
+    ):
 
         if self._busy:
             return
 
-        identifier = (
-            self.identifier.text
-            .strip()
+
+        code = (
+            self.identifier.text.strip()
         )
 
         password = (
             self.password.text
         )
 
-        if not identifier:
+
+        if not code:
 
             self._set_status(
                 "کد ملی را وارد کنید.",
                 ERROR
             )
-
             return
 
-        if len(identifier) != 10:
+
+        if len(code) != 10:
 
             self._set_status(
                 "کد ملی باید ۱۰ رقم باشد.",
                 ERROR
             )
-
             return
+
 
         if not password:
 
@@ -254,8 +234,8 @@ class LoginScreen(Screen):
                 "رمز عبور را وارد کنید.",
                 ERROR
             )
-
             return
+
 
         if self.app_state is None:
 
@@ -263,47 +243,43 @@ class LoginScreen(Screen):
                 "وضعیت برنامه آماده نیست.",
                 ERROR
             )
-
             return
+
 
         if self.app_state.api is None:
 
             self._set_status(
-                "سرویس اتصال آماده نیست.",
+                "اتصال سرور آماده نیست.",
                 ERROR
             )
-
             return
 
-        if not self.app_state.api.configured:
 
-            self._set_status(
-                "اتصال سرور تنظیم نشده است.",
-                ERROR
-            )
-
-            return
 
         self._busy = True
+
         self.login_button.disabled = True
 
+
         self._set_status(
-            "در حال بررسی اطلاعات...",
-            SECONDARY
+            "در حال بررسی اطلاعات..."
         )
+
 
         Thread(
             target=self._authenticate,
             args=(
-                identifier,
+                code,
                 password,
             ),
             daemon=True
         ).start()
 
+
+
     def _authenticate(
         self,
-        identifier,
+        code,
         password
     ):
 
@@ -311,95 +287,124 @@ class LoginScreen(Screen):
 
             session = (
                 self.app_state.api.sign_in(
-                    identifier,
+                    code,
                     password
                 )
             )
 
+
             if not session:
 
-                raise RuntimeError(
-                    "نشست ایجاد نشد."
+                raise Exception(
+                    "نشست کاربر دریافت نشد."
                 )
 
-            if not self.app_state.set_session(
-                session
-            ):
 
-                raise RuntimeError(
+            saved = (
+                self.app_state.set_session(
+                    session
+                )
+            )
+
+
+            if not saved:
+
+                raise Exception(
                     "ذخیره نشست انجام نشد."
                 )
 
+
             Clock.schedule_once(
-                lambda dt:
-                self._login_success(),
-                0
+                self._login_success
             )
+
 
         except Exception as exc:
 
             print(
-                "LOGIN ERROR:",
+                "AUTH ERROR:",
                 repr(exc)
             )
 
-            message = str(
-                exc
-            ).strip()
-
-            if not message:
-                message = (
-                    "ورود انجام نشد."
-                )
 
             Clock.schedule_once(
-                lambda dt, msg=message:
+                lambda dt:
                 self._login_failed(
-                    msg
-                ),
-                0
+                    str(exc)
+                )
             )
 
-    def _login_success(self):
+
+
+    def _login_success(
+        self,
+        *_ 
+    ):
 
         self._busy = False
+
         self.login_button.disabled = False
+
 
         self._set_status(
             "ورود موفق بود.",
             SUCCESS
         )
 
+
         try:
 
-            if self.manager:
+            if not self.manager:
 
-                dashboard = (
-                    self.manager.get_screen(
-                        "dashboard"
-                    )
+                raise Exception(
+                    "ScreenManager موجود نیست."
                 )
 
-                if hasattr(
-                    dashboard,
-                    "refresh"
-                ):
-                    dashboard.refresh()
 
-                self.manager.current = (
+            if not self.manager.has_screen(
+                "dashboard"
+            ):
+
+                raise Exception(
+                    "Dashboard ساخته نشده است."
+                )
+
+
+            dashboard = (
+                self.manager.get_screen(
                     "dashboard"
                 )
+            )
+
+
+            if hasattr(
+                dashboard,
+                "refresh"
+            ):
+
+                dashboard.refresh()
+
+
+
+            self.manager.current = (
+                "dashboard"
+            )
+
 
         except Exception as exc:
 
-            import traceback
+            print(
+                "DASHBOARD OPEN ERROR:",
+                repr(exc)
+            )
 
-            traceback.print_exc()
 
             self._set_status(
-                str(exc),
+                "ورود موفق شد اما داشبورد باز نشد.",
                 ERROR
             )
+
+
 
     def _login_failed(
         self,
@@ -407,23 +412,32 @@ class LoginScreen(Screen):
     ):
 
         self._busy = False
+
         self.login_button.disabled = False
+
 
         self._set_status(
             message,
             ERROR
         )
 
-    def on_pre_enter(self, *args):
+
+    def on_pre_enter(
+        self,
+        *args
+    ):
 
         self._busy = False
 
         try:
+
             self.login_button.disabled = False
+
         except Exception:
+
             pass
+
 
         return super().on_pre_enter(
             *args
-        )
-            
+        )                                        
