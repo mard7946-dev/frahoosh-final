@@ -392,13 +392,12 @@ class LoginScreen(Screen):
 
         except Exception as exc:
 
-            print(
-                "DASHBOARD ERROR:",
-                repr(exc)
-            )
+            import traceback
+
+            traceback.print_exc()
 
             self._set_status(
-                "ورود موفق شد اما داشبورد باز نشد.",
+                str(exc),
                 ERROR
             )
 
