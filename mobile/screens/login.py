@@ -398,7 +398,7 @@ class LoginScreen(Screen):
             )
 
             self._set_status(
-                "ورود موفق شد اما داشبورد باز نشد.",
+                "DASHBOARD ERROR: " + str(exc),
                 ERROR
             )
 
