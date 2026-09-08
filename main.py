@@ -21,21 +21,31 @@ class FrahooshMobileApp(App):
             1
         )
 
-        # ثبت فونت
+        # -------------------------
+        # Fonts
+        # -------------------------
+
         try:
+
             register_fonts()
 
         except Exception as exc:
+
             print(
-                "FONT ERROR:",
+                "FONT REGISTER ERROR:",
                 repr(exc)
             )
 
 
-        # وضعیت برنامه
+        # -------------------------
+        # App State
+        # -------------------------
+
         try:
 
-            from mobile.services.app_state import AppState
+            from mobile.services.app_state import (
+                AppState
+            )
 
             self.state = AppState()
 
@@ -53,6 +63,10 @@ class FrahooshMobileApp(App):
             self.state = None
 
 
+        # -------------------------
+        # Screen Manager
+        # -------------------------
+
         manager = ScreenManager(
             transition=FadeTransition(
                 duration=0.15
@@ -61,15 +75,17 @@ class FrahooshMobileApp(App):
 
 
         # -------------------------
-        # LOGIN
+        # Login
         # -------------------------
 
         try:
 
-            from mobile.screens.login import LoginScreen
+            from mobile.screens.login import (
+                LoginScreen
+            )
 
             login = LoginScreen(
-                app_state=self.state,
+                self.state,
                 name="login"
             )
 
@@ -78,131 +94,127 @@ class FrahooshMobileApp(App):
             )
 
             print(
-                "LOGIN REGISTERED"
+                "LOGIN SCREEN READY"
             )
+
 
         except Exception as exc:
 
             print(
-                "LOGIN SCREEN ERROR:",
-                type(exc).__name__,
-                str(exc)
+                "LOGIN LOAD ERROR:",
+                repr(exc)
             )
 
 
 
         # -------------------------
-        # DASHBOARD
+        # Dashboard
         # -------------------------
 
         try:
 
-            from mobile.screens.dashboard import DashboardScreen
-
-            dashboard = DashboardScreen(
-                app_state=self.state,
-                name="dashboard"
+            from mobile.screens.dashboard import (
+                DashboardScreen
             )
 
+            dashboard = DashboardScreen(
+                self.state,
+                name="dashboard"
+            )
 
             manager.add_widget(
                 dashboard
             )
 
-
             print(
-                "DASHBOARD REGISTERED"
+                "DASHBOARD SCREEN READY"
             )
 
 
         except Exception as exc:
 
             print(
-                "DASHBOARD SCREEN ERROR:",
-                type(exc).__name__,
-                str(exc)
+                "DASHBOARD LOAD ERROR:",
+                repr(exc)
             )
 
 
 
         # -------------------------
-        # MODULE
+        # Module
         # -------------------------
 
         try:
 
-            from mobile.screens.module import ModuleScreen
-
-
-            module = ModuleScreen(
-                app_state=self.state,
-                name="module"
+            from mobile.screens.module import (
+                ModuleScreen
             )
 
+            module = ModuleScreen(
+                self.state,
+                name="module"
+            )
 
             manager.add_widget(
                 module
             )
 
-
             print(
-                "MODULE REGISTERED"
+                "MODULE SCREEN READY"
             )
 
 
         except Exception as exc:
 
             print(
-                "MODULE SCREEN ERROR:",
-                type(exc).__name__,
-                str(exc)
+                "MODULE LOAD ERROR:",
+                repr(exc)
             )
 
 
 
         # -------------------------
-        # UPDATE
+        # Update
         # -------------------------
 
         try:
 
-            from mobile.screens.update import UpdateScreen
-
-
-            update = UpdateScreen(
-                app_state=self.state,
-                name="update"
+            from mobile.screens.update import (
+                UpdateScreen
             )
 
+            update = UpdateScreen(
+                self.state,
+                name="update"
+            )
 
             manager.add_widget(
                 update
             )
 
-
             print(
-                "UPDATE REGISTERED"
+                "UPDATE SCREEN READY"
             )
 
 
         except Exception as exc:
 
             print(
-                "UPDATE SCREEN ERROR:",
-                type(exc).__name__,
-                str(exc)
+                "UPDATE LOAD ERROR:",
+                repr(exc)
             )
 
 
 
-        # شروع برنامه
+        # -------------------------
+        # Initial Screen
+        # -------------------------
 
         if manager.has_screen(
             "login"
         ):
 
             manager.current = "login"
-
 
         elif manager.screen_names:
 
@@ -223,4 +235,4 @@ class FrahooshMobileApp(App):
 
 if __name__ == "__main__":
 
-    FrahooshMobileApp().run()      
+    FrahooshMobileApp().run()
