@@ -32,7 +32,6 @@ from mobile.ui import (
 )
 
 
-
 ROLE_ALIASES = {
 
     "admin": "manager",
@@ -66,7 +65,6 @@ ROLE_ALIASES = {
     "ولی": "parent",
     "اولیا": "parent",
 }
-
 
 
 ROLE_TITLES = {
@@ -117,8 +115,6 @@ MANAGER_MENU = [
 
     ("تنظیمات", "settings"),
 
-    ("درباره برنامه", "about"),
-
 ]
 
 
@@ -129,16 +125,10 @@ ROLE_MENU = {
     "executive": [
 
         ("معاون اجرایی", "executive"),
-
         ("دانش‌آموزان", "students"),
-
         ("اولیا", "parents"),
-
         ("پیام‌ها", "messages"),
-
         ("تنظیمات", "settings"),
-
-        ("درباره برنامه", "about"),
 
     ],
 
@@ -146,20 +136,12 @@ ROLE_MENU = {
     "educational": [
 
         ("معاون آموزشی", "educational"),
-
         ("دانش‌آموزان", "students"),
-
         ("دبیران", "teachers"),
-
         ("کلاس آنلاین", "online"),
-
         ("تابلو هوشمند", "smart_board"),
-
         ("گزارش‌ها", "reports"),
-
         ("پیام‌ها", "messages"),
-
-        ("درباره برنامه", "about"),
 
     ],
 
@@ -167,14 +149,9 @@ ROLE_MENU = {
     "cultural": [
 
         ("معاون پرورشی", "cultural"),
-
         ("دانش‌آموزان", "students"),
-
         ("تابلو هوشمند", "smart_board"),
-
         ("پیام‌ها", "messages"),
-
-        ("درباره برنامه", "about"),
 
     ],
 
@@ -182,14 +159,9 @@ ROLE_MENU = {
     "advisor": [
 
         ("مشاوره", "advisor"),
-
         ("دانش‌آموزان", "students"),
-
         ("اولیا", "parents"),
-
         ("پیام‌ها", "messages"),
-
-        ("درباره برنامه", "about"),
 
     ],
 
@@ -197,16 +169,10 @@ ROLE_MENU = {
     "teacher": [
 
         ("پنل دبیر", "teacher"),
-
         ("دانش‌آموزان", "students"),
-
         ("کلاس آنلاین", "online"),
-
         ("تابلو هوشمند", "smart_board"),
-
         ("پیام‌ها", "messages"),
-
-        ("درباره برنامه", "about"),
 
     ],
 
@@ -214,20 +180,12 @@ ROLE_MENU = {
     "student": [
 
         ("پنل دانش‌آموز", "student"),
-
         ("برنامه هفتگی", "schedule"),
-
         ("وضعیت تحصیلی", "student_info"),
-
         ("پرداخت آنلاین", "payment"),
-
         ("کلاس آنلاین", "online"),
-
         ("تابلو هوشمند", "smart_board"),
-
         ("پیام‌ها", "messages"),
-
-        ("درباره برنامه", "about"),
 
     ],
 
@@ -235,18 +193,11 @@ ROLE_MENU = {
     "parent": [
 
         ("پنل اولیا", "parent"),
-
         ("وضعیت تحصیلی فرزند", "student_info"),
-
         ("پرداخت آنلاین", "payment"),
-
         ("کلاس آنلاین", "online"),
-
         ("تابلو هوشمند", "smart_board"),
-
         ("پیام‌ها", "messages"),
-
-        ("درباره برنامه", "about"),
 
     ],
 
@@ -254,19 +205,11 @@ ROLE_MENU = {
 
 
 
-
 class HamburgerButton(Widget):
 
+    def __init__(self, **kwargs):
 
-    def __init__(
-        self,
-        **kwargs
-    ):
-
-        super().__init__(
-            **kwargs
-        )
-
+        super().__init__(**kwargs)
 
         with self.canvas:
 
@@ -277,20 +220,9 @@ class HamburgerButton(Widget):
                 1
             )
 
-
-            self.line1 = Line(
-                width=2
-            )
-
-
-            self.line2 = Line(
-                width=2
-            )
-
-
-            self.line3 = Line(
-                width=2
-            )
+            self.line1 = Line(width=2)
+            self.line2 = Line(width=2)
+            self.line3 = Line(width=2)
 
 
         self.bind(
@@ -299,53 +231,33 @@ class HamburgerButton(Widget):
         )
 
 
+    def _update(self, *_):
 
-    def _update(
-        self,
-        *_ 
-    ):
-
-        left = (
-            self.x
-            + self.width * 0.2
-        )
-
-        right = (
-            self.x
-            + self.width * 0.8
-        )
+        left = self.x + self.width * 0.2
+        right = self.x + self.width * 0.8
 
 
         self.line1.points = [
-
             left,
             self.center_y + dp(8),
-
             right,
             self.center_y + dp(8),
-
         ]
 
 
         self.line2.points = [
-
             left,
             self.center_y,
-
             right,
             self.center_y,
-
         ]
 
 
         self.line3.points = [
-
             left,
             self.center_y - dp(8),
-
             right,
             self.center_y - dp(8),
-
         ]
 
 
@@ -358,903 +270,175 @@ class DashboardScreen(Screen):
     )
 
 
-    def __init__(
-        self,
-        app_state,
-        **kwargs
-    ):
+    def __init__(self, app_state, **kwargs):
 
-        super().__init__(
-            **kwargs
-        )
-
+        super().__init__(**kwargs)
 
         self.app_state = app_state
-
         self.drawer_open = False
 
         self._build_ui()
 
-    def _build_ui(self):
-
-        self.clear_widgets()
-
-
-        root = FloatLayout()
-
-
-
-        # -------------------------
-        # Background
-        # -------------------------
-
-        self.background = Image(
-
-            source=BACKGROUND_PATH,
-
-            allow_stretch=True,
-
-            keep_ratio=False,
-
-            size_hint=(1, 1),
-
-            pos_hint={
-                "x": 0,
-                "y": 0
-            },
-
-        )
-
-
-        root.add_widget(
-            self.background
-        )
-
-
-
-        # -------------------------
-        # Dark Overlay
-        # -------------------------
-
-        self.overlay = Widget()
-
-
-        with self.overlay.canvas:
-
-            self.overlay_color = Color(
-
-                0.02,
-                0.08,
-                0.15,
-                0.25
-
-            )
-
-
-            self.overlay_rect = Rectangle()
-
-
-
-        self.overlay.bind(
-
-            pos=self._update_overlay,
-
-            size=self._update_overlay
-
-        )
-
-
-        root.add_widget(
-            self.overlay
-        )
-
-
-
-        # -------------------------
-        # Header
-        # -------------------------
-
-        self.header = FloatLayout(
-
-            size_hint=(1, None),
-
-            height=dp(145),
-
-            pos_hint={
-                "top": 1
-            }
-
-        )
-
-
-        with self.header.canvas:
-
-            self.header_color = Color(
-
-                0.02,
-                0.15,
-                0.28,
-                0.90
-
-            )
-
-
-            self.header_rect = RoundedRectangle()
-
-
-
-        self.header.bind(
-
-            pos=self._update_header,
-
-            size=self._update_header
-
-        )
-
-
-        root.add_widget(
-            self.header
-        )
-
-
-
-        self.menu_button = HamburgerButton(
-
-            size_hint=(None, None),
-
-            size=(
-
-                dp(60),
-
-                dp(60)
-
-            ),
-
-            pos_hint={
-
-                "right":0.97,
-
-                "top":0.90
-
-            }
-
-        )
-
-
-        self.menu_button.bind(
-
-            on_touch_down=self._hamburger_touch
-
-        )
-
-
-        self.header.add_widget(
-
-            self.menu_button
-
-        )
-
-
-
-        self.title_label = Label(
-
-            text=rtl_text(
-
-                "سامانه هوشمند مدیریت مدرسه"
-
-            ),
-
-            font_name=font_name(),
-
-            font_size="22sp",
-
-            bold=True,
-
-            color=(
-
-                1,
-
-                1,
-
-                1,
-
-                1
-
-            ),
-
-            halign="right",
-
-            valign="middle",
-
-            size_hint=(0.75, None),
-
-            height=dp(45),
-
-            pos_hint={
-
-                "right":0.90,
-
-                "top":0.75
-
-            }
-
-        )
-
-
-        self.title_label.bind(
-
-            size=self._sync_text_size
-
-        )
-
-
-        self.header.add_widget(
-
-            self.title_label
-
-        )
-
-
-
-        self.school_label = Label(
-
-            text=rtl_text(
-
-                SCHOOL_NAME
-
-            ),
-
-            font_name=font_name(),
-
-            font_size="14sp",
-
-            color=(
-
-                0.85,
-
-                0.95,
-
-                1,
-
-                1
-
-            ),
-
-            halign="right",
-
-            valign="middle",
-
-            size_hint=(0.75,None),
-
-            height=dp(35),
-
-            pos_hint={
-
-                "right":0.90,
-
-                "top":0.45
-
-            }
-
-        )
-
-
-        self.school_label.bind(
-
-            size=self._sync_text_size
-
-        )
-
-
-        self.header.add_widget(
-
-            self.school_label
-
-        )
-
-
-
-        # -------------------------
-        # Welcome Card
-        # -------------------------
-
-        self.welcome_card = FloatLayout(
-
-            size_hint=(0.90,None),
-
-            height=dp(160),
-
-            pos_hint={
-
-                "center_x":0.5,
-
-                "top":0.76
-
-            }
-
-        )
-
-
-        with self.welcome_card.canvas:
-
-            self.welcome_color = Color(
-
-                1,
-
-                1,
-
-                1,
-
-                0.93
-
-            )
-
-
-            self.welcome_rect = RoundedRectangle(
-
-                radius=[dp(22)]
-
-            )
-
-
-        self.welcome_card.bind(
-
-            pos=self._update_welcome,
-
-            size=self._update_welcome
-
-        )
-
-
-        root.add_widget(
-
-            self.welcome_card
-
-        )
-
-
-
-        self.welcome_title = Label(
-
-            text=rtl_text(
-
-                "خوش آمدید"
-
-            ),
-
-            font_name=font_name(),
-
-            font_size="22sp",
-
-            bold=True,
-
-            color=(
-
-                0.02,
-
-                0.18,
-
-                0.32,
-
-                1
-
-            ),
-
-            halign="right",
-
-            valign="middle",
-
-            size_hint=(0.85,None),
-
-            height=dp(45),
-
-            pos_hint={
-
-                "right":0.94,
-
-                "top":0.82
-
-            }
-
-        )
-
-
-        self.welcome_title.bind(
-
-            size=self._sync_text_size
-
-        )
-
-
-        self.welcome_card.add_widget(
-
-            self.welcome_title
-
-        )
-
-
-
-        self.role_label = Label(
-
-            text="",
-
-            font_name=font_name(),
-
-            font_size="16sp",
-
-            color=(
-
-                0.1,
-
-                0.3,
-
-                0.45,
-
-                1
-
-            ),
-
-            halign="right",
-
-            valign="middle",
-
-            size_hint=(0.85,None),
-
-            height=dp(38),
-
-            pos_hint={
-
-                "right":0.94,
-
-                "top":0.53
-
-            }
-
-        )
-
-
-        self.role_label.bind(
-
-            size=self._sync_text_size
-
-        )
-
-
-        self.welcome_card.add_widget(
-
-            self.role_label
-
-        )
-
-
-
-        self.status_label = Label(
-
-            text=rtl_text(
-
-                "سامانه آماده استفاده است"
-
-            ),
-
-            font_name=font_name(),
-
-            font_size="14sp",
-
-            color=(
-
-                0.1,
-
-                0.45,
-
-                0.3,
-
-                1
-
-            ),
-
-            halign="right",
-
-            valign="middle",
-
-            size_hint=(0.85,None),
-
-            height=dp(35),
-
-            pos_hint={
-
-                "right":0.94,
-
-                "top":0.25
-
-            }
-
-        )
-
-
-        self.status_label.bind(
-
-            size=self._sync_text_size
-
-        )
-
-
-        self.welcome_card.add_widget(
-
-            self.status_label
-
-        )
-
-        # -------------------------
-        # Drawer Overlay
-        # -------------------------
-
-        self.drawer_overlay = Button(
-
-            text="",
-
-            background_normal="",
-
-            background_color=(
-
-                0,
-
-                0,
-
-                0,
-
-                0.45
-
-            ),
-
-            size_hint=(1,1),
-
-            opacity=0,
-
-            disabled=True,
-
-        )
-
-
-        self.drawer_overlay.bind(
-
-            on_release=self.close_drawer
-
-        )
-
-
-        root.add_widget(
-
-            self.drawer_overlay
-
-        )
-
-
-
-        # -------------------------
-        # Drawer
-        # -------------------------
-
-        self.drawer = FloatLayout(
-
-            size_hint=(None,1),
-
-            width=dp(320),
-
-            x=-dp(320)
-
-        )
-
-
-        with self.drawer.canvas:
-
-            self.drawer_color = Color(
-
-                0.02,
-
-                0.09,
-
-                0.17,
-
-                1
-
-            )
-
-
-            self.drawer_rect = RoundedRectangle()
-
-
-
-        self.drawer.bind(
-
-            pos=self._update_drawer,
-
-            size=self._update_drawer
-
-        )
-
-
-        root.add_widget(
-
-            self.drawer
-
-        )
-
-
-        self._build_drawer()
-
-
-
-        self.add_widget(
-
-            root
-
-        )
-
-
-
     def _build_drawer(self):
-
 
         self.drawer.clear_widgets()
 
 
-
         title = Label(
-
-            text=rtl_text(
-
-                APP_NAME
-
-            ),
-
+            text=rtl_text(APP_NAME),
             font_name=font_name(),
-
             font_size="26sp",
-
             bold=True,
-
-            color=(1,1,1,1),
-
-            size_hint=(1,None),
-
+            color=(1, 1, 1, 1),
+            size_hint=(1, None),
             height=dp(60),
-
             pos_hint={
-
-                "top":0.98
-
+                "top": 0.98
             }
-
         )
-
 
         self.drawer.add_widget(
-
             title
-
         )
-
 
 
         self.menu_role = Label(
-
             text="",
-
             font_name=font_name(),
-
             font_size="13sp",
-
             color=(
-
                 0.7,
-
                 0.9,
-
                 1,
-
                 1
-
             ),
-
-            size_hint=(1,None),
-
+            size_hint=(1, None),
             height=dp(40),
-
             pos_hint={
-
-                "top":0.88
-
+                "top": 0.88
             }
-
         )
-
 
         self.drawer.add_widget(
-
             self.menu_role
-
         )
-
 
 
         self.menu_scroll = ScrollView(
-
-            size_hint=(0.95,0.68),
-
+            size_hint=(0.95, 0.68),
             pos_hint={
-
-                "center_x":0.5,
-
-                "top":0.78
-
+                "center_x": 0.5,
+                "top": 0.78
             },
-
             do_scroll_x=False
-
         )
 
 
-
         self.menu_box = BoxLayout(
-
             orientation="vertical",
-
             spacing=dp(8),
-
             padding=dp(5),
-
             size_hint_y=None
-
         )
 
 
         self.menu_box.bind(
-
             minimum_height=
-
             self.menu_box.setter(
-
                 "height"
-
             )
-
         )
 
 
         self.menu_scroll.add_widget(
-
             self.menu_box
-
         )
 
 
         self.drawer.add_widget(
-
             self.menu_scroll
-
         )
 
 
-
         self.logout_button = Button(
-
             text=rtl_text(
-
                 "خروج از حساب"
-
             ),
-
             font_name=font_name(),
-
             background_normal="",
-
             background_color=(
-
-                0.6,
-
-                0.1,
-
-                0.15,
-
+                0.65,
+                0.08,
+                0.12,
                 1
-
             ),
-
-            color=(1,1,1,1),
-
-            size_hint=(0.88,None),
-
+            color=(1, 1, 1, 1),
+            size_hint=(0.88, None),
             height=dp(50),
-
             pos_hint={
-
-                "center_x":0.5,
-
-                "y":0.03
-
+                "center_x": 0.5,
+                "y": 0.03
             }
-
         )
 
 
         self.logout_button.bind(
-
             on_release=self.logout
-
         )
 
 
         self.drawer.add_widget(
-
             self.logout_button
-
         )
 
 
+    # -----------------------------------------
+    # REFRESH
+    # -----------------------------------------
 
     def refresh(self):
 
-
         role = self._get_role()
-
 
         name = self._get_display_name()
 
 
-
         title = ROLE_TITLES.get(
-
             role,
-
             "کاربر"
-
         )
-
 
 
         self.welcome_title.text = rtl_text(
-
             f"خوش آمدید، {name}"
-
         )
-
 
 
         self.role_label.text = rtl_text(
-
             f"نقش کاربری: {title}"
-
         )
-
 
 
         self.menu_role.text = rtl_text(
-
             f"{name} | {title}"
-
         )
-
 
 
         self._populate_menu(
-
             role
-
         )
 
 
+    # -----------------------------------------
+    # MENU
+    # -----------------------------------------
 
     def _populate_menu(
-
         self,
-
         role
-
     ):
 
-
         self.menu_box.clear_widgets()
-
 
 
         items = (
@@ -1264,15 +448,11 @@ class DashboardScreen(Screen):
             if role == "manager"
 
             else ROLE_MENU.get(
-
                 role,
-
                 []
-
             )
 
         )
-
 
 
         for title, route in items:
@@ -1300,7 +480,7 @@ class DashboardScreen(Screen):
 
                 ),
 
-                color=(1,1,1,1),
+                color=(1, 1, 1, 1),
 
                 size_hint_y=None,
 
@@ -1312,14 +492,318 @@ class DashboardScreen(Screen):
             btn.bind(
 
                 on_release=lambda x, r=route:
-
                 self._menu_selected(r)
 
             )
 
 
             self.menu_box.add_widget(
-
                 btn
-
             )
+
+
+    # -----------------------------------------
+    # NAVIGATION
+    # -----------------------------------------
+
+    def _menu_selected(
+        self,
+        route
+    ):
+
+        self.close_drawer()
+
+
+        if not self.manager:
+            return
+
+
+        if not self.manager.has_screen(
+            "module"
+        ):
+            return
+
+
+        module = self.manager.get_screen(
+            "module"
+        )
+
+
+        try:
+
+            module.set_module(
+                route
+            )
+
+            self.manager.current = (
+                "module"
+            )
+
+
+        except Exception as exc:
+
+            print(
+                "MODULE ROUTE ERROR:",
+                repr(exc)
+            )
+
+
+    # -----------------------------------------
+    # ROLE
+    # -----------------------------------------
+
+    def _get_role(self):
+
+        try:
+
+            role = self.app_state.role
+
+        except Exception:
+
+            role = "student"
+
+
+        role = str(
+            role or "student"
+        ).strip().lower()
+
+
+        return ROLE_ALIASES.get(
+            role,
+            role
+        )
+
+
+    def _get_display_name(self):
+
+        try:
+
+            return (
+                self.app_state.display_name
+                or "کاربر فراهوش"
+            )
+
+        except Exception:
+
+            return "کاربر فراهوش"
+
+    # -----------------------------------------
+    # DRAWER CONTROL
+    # -----------------------------------------
+
+    def _hamburger_touch(
+        self,
+        instance,
+        touch
+    ):
+
+        if self.menu_button.collide_point(
+            *touch.pos
+        ):
+
+            self.toggle_drawer()
+
+            return True
+
+        return False
+
+
+
+    def toggle_drawer(self):
+
+        if self.drawer_open:
+
+            self.close_drawer()
+
+        else:
+
+            self.open_drawer()
+
+
+
+    def open_drawer(self):
+
+        if self.drawer_open:
+            return
+
+
+        self.drawer_open = True
+
+
+        self.drawer_overlay.opacity = 1
+
+        self.drawer_overlay.disabled = False
+
+
+        Animation(
+            x=0,
+            duration=0.25
+        ).start(
+            self.drawer
+        )
+
+
+
+    def close_drawer(
+        self,
+        *_ 
+    ):
+
+        if not self.drawer_open:
+            return
+
+
+        self.drawer_open = False
+
+
+        self.drawer_overlay.opacity = 0
+
+        self.drawer_overlay.disabled = True
+
+
+        Animation(
+            x=-self.drawer_width,
+            duration=0.25
+        ).start(
+            self.drawer
+        )
+
+
+
+    # -----------------------------------------
+    # LOGOUT
+    # -----------------------------------------
+
+    def logout(
+        self,
+        *_ 
+    ):
+
+        try:
+
+            if self.app_state:
+
+                self.app_state.logout()
+
+
+        except Exception as exc:
+
+            print(
+                "LOGOUT ERROR:",
+                repr(exc)
+            )
+
+
+        if self.manager:
+
+            if self.manager.has_screen(
+                "login"
+            ):
+
+                self.manager.current = (
+                    "login"
+                )
+
+
+
+    # -----------------------------------------
+    # ENTER SCREEN
+    # -----------------------------------------
+
+    def on_enter(
+        self,
+        *_ 
+    ):
+
+        try:
+
+            self.refresh()
+
+        except Exception as exc:
+
+            print(
+                "DASHBOARD REFRESH ERROR:",
+                repr(exc)
+            )
+
+
+
+    # -----------------------------------------
+    # CANVAS UPDATE
+    # -----------------------------------------
+
+    def _update_overlay(
+        self,
+        instance,
+        value
+    ):
+
+        self.overlay_rect.pos = (
+            instance.pos
+        )
+
+        self.overlay_rect.size = (
+            instance.size
+        )
+
+
+
+    def _update_header(
+        self,
+        instance,
+        value
+    ):
+
+        self.header_rect.pos = (
+            instance.pos
+        )
+
+        self.header_rect.size = (
+            instance.size
+        )
+
+
+
+    def _update_welcome(
+        self,
+        instance,
+        value
+    ):
+
+        self.welcome_rect.pos = (
+            instance.pos
+        )
+
+        self.welcome_rect.size = (
+            instance.size
+        )
+
+
+
+    def _update_drawer(
+        self,
+        instance,
+        value
+    ):
+
+        self.drawer_rect.pos = (
+            instance.pos
+        )
+
+        self.drawer_rect.size = (
+            instance.size
+        )
+
+
+
+    # -----------------------------------------
+    # TEXT RTL
+    # -----------------------------------------
+
+    def _sync_text_size(
+        self,
+        instance,
+        value
+    ):
+
+        instance.text_size = value
