@@ -4,6 +4,7 @@ from kivy.uix.screenmanager import (
     ScreenManager,
     FadeTransition,
 )
+from kivy.clock import Clock
 
 from mobile.ui import register_fonts
 
@@ -21,6 +22,10 @@ class FrahooshMobileApp(App):
             1
         )
 
+        print(
+            "FRAHOOSH START"
+        )
+
         # -------------------------
         # Fonts
         # -------------------------
@@ -28,6 +33,10 @@ class FrahooshMobileApp(App):
         try:
 
             register_fonts()
+
+            print(
+                "FONT READY"
+            )
 
         except Exception as exc:
 
@@ -41,6 +50,8 @@ class FrahooshMobileApp(App):
         # App State
         # -------------------------
 
+        self.state = None
+
         try:
 
             from mobile.services.app_state import (
@@ -53,14 +64,13 @@ class FrahooshMobileApp(App):
                 "APP STATE READY"
             )
 
+
         except Exception as exc:
 
             print(
                 "APP STATE ERROR:",
                 repr(exc)
             )
-
-            self.state = None
 
 
         # -------------------------
@@ -75,146 +85,113 @@ class FrahooshMobileApp(App):
 
 
         # -------------------------
+        # Safe Screen Loader
+        # -------------------------
+
+        def add_screen(
+            screen_class,
+            module_path,
+            screen_name
+        ):
+
+            try:
+
+                module = __import__(
+                    module_path,
+                    fromlist=[
+                        screen_class
+                    ]
+                )
+
+                cls = getattr(
+                    module,
+                    screen_class
+                )
+
+                screen = cls(
+                    self.state,
+                    name=screen_name
+                )
+
+                manager.add_widget(
+                    screen
+                )
+
+                print(
+                    screen_name.upper(),
+                    "SCREEN READY"
+                )
+
+                return True
+
+
+            except Exception as exc:
+
+                print(
+                    screen_name.upper(),
+                    "LOAD ERROR:",
+                    repr(exc)
+                )
+
+                return False
+
+
+
+        # -------------------------
         # Login
         # -------------------------
 
-        try:
-
-            from mobile.screens.login import (
-                LoginScreen
-            )
-
-            login = LoginScreen(
-                self.state,
-                name="login"
-            )
-
-            manager.add_widget(
-                login
-            )
-
-            print(
-                "LOGIN SCREEN READY"
-            )
-
-
-        except Exception as exc:
-
-            print(
-                "LOGIN LOAD ERROR:",
-                repr(exc)
-            )
-
+        add_screen(
+            "LoginScreen",
+            "mobile.screens.login",
+            "login"
+        )
 
 
         # -------------------------
         # Dashboard
         # -------------------------
 
-        try:
-
-            from mobile.screens.dashboard import (
-                DashboardScreen
-            )
-
-            dashboard = DashboardScreen(
-                self.state,
-                name="dashboard"
-            )
-
-            manager.add_widget(
-                dashboard
-            )
-
-            print(
-                "DASHBOARD SCREEN READY"
-            )
-
-
-        except Exception as exc:
-
-            print(
-                "DASHBOARD LOAD ERROR:",
-                repr(exc)
-            )
-
+        add_screen(
+            "DashboardScreen",
+            "mobile.screens.dashboard",
+            "dashboard"
+        )
 
 
         # -------------------------
         # Module
         # -------------------------
 
-        try:
-
-            from mobile.screens.module import (
-                ModuleScreen
-            )
-
-            module = ModuleScreen(
-                self.state,
-                name="module"
-            )
-
-            manager.add_widget(
-                module
-            )
-
-            print(
-                "MODULE SCREEN READY"
-            )
-
-
-        except Exception as exc:
-
-            print(
-                "MODULE LOAD ERROR:",
-                repr(exc)
-            )
-
+        add_screen(
+            "ModuleScreen",
+            "mobile.screens.module",
+            "module"
+        )
 
 
         # -------------------------
         # Update
         # -------------------------
 
-        try:
-
-            from mobile.screens.update import (
-                UpdateScreen
-            )
-
-            update = UpdateScreen(
-                self.state,
-                name="update"
-            )
-
-            manager.add_widget(
-                update
-            )
-
-            print(
-                "UPDATE SCREEN READY"
-            )
-
-
-        except Exception as exc:
-
-            print(
-                "UPDATE LOAD ERROR:",
-                repr(exc)
-            )
-
+        add_screen(
+            "UpdateScreen",
+            "mobile.screens.update",
+            "update"
+        )
 
 
         # -------------------------
-        # Initial Screen
+        # Start Screen
         # -------------------------
 
         if manager.has_screen(
             "login"
         ):
 
-            manager.current = "login"
+            manager.current = (
+                "login"
+            )
 
         elif manager.screen_names:
 
@@ -224,8 +201,21 @@ class FrahooshMobileApp(App):
 
 
         print(
-            "SCREENS:",
+            "AVAILABLE SCREENS:",
             manager.screen_names
+        )
+
+
+        # -------------------------
+        # Startup Check
+        # -------------------------
+
+        Clock.schedule_once(
+            lambda dt:
+            print(
+                "FRAHOOSH READY"
+            ),
+            1
         )
 
 
@@ -235,4 +225,6 @@ class FrahooshMobileApp(App):
 
 if __name__ == "__main__":
 
-    FrahooshMobileApp().run()
+    FrahooshMobileApp().run()         
+
+        
