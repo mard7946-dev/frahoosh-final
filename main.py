@@ -22,16 +22,14 @@ class FrahooshMobileApp(App):
             1
         )
 
-        print(
-            "FRAHOOSH START"
-        )
+        print("FRAHOOSH START")
+
 
         # -------------------------
         # Fonts
         # -------------------------
 
         try:
-
             register_fonts()
 
             print(
@@ -39,7 +37,6 @@ class FrahooshMobileApp(App):
             )
 
         except Exception as exc:
-
             print(
                 "FONT REGISTER ERROR:",
                 repr(exc)
@@ -54,16 +51,13 @@ class FrahooshMobileApp(App):
 
         try:
 
-            from mobile.services.app_state import (
-                AppState
-            )
+            from mobile.services.app_state import AppState
 
             self.state = AppState()
 
             print(
                 "APP STATE READY"
             )
-
 
         except Exception as exc:
 
@@ -125,25 +119,25 @@ class FrahooshMobileApp(App):
                 return True
 
 
-        except Exception as exc:
+            except Exception as exc:
 
-            import traceback
+                import traceback
 
-            traceback.print_exc()
+                traceback.print_exc()
 
-            print(
-                screen_name.upper(),
-                "LOAD ERROR:",
-                type(exc).__name__,
-                str(exc)
-            )
+                print(
+                    screen_name.upper(),
+                    "LOAD ERROR:",
+                    type(exc).__name__,
+                    str(exc)
+                )
 
                 return False
 
 
 
         # -------------------------
-        # Login
+        # Screens
         # -------------------------
 
         add_screen(
@@ -153,10 +147,6 @@ class FrahooshMobileApp(App):
         )
 
 
-        # -------------------------
-        # Dashboard
-        # -------------------------
-
         add_screen(
             "DashboardScreen",
             "mobile.screens.dashboard",
@@ -164,20 +154,12 @@ class FrahooshMobileApp(App):
         )
 
 
-        # -------------------------
-        # Module
-        # -------------------------
-
         add_screen(
             "ModuleScreen",
             "mobile.screens.module",
             "module"
         )
 
-
-        # -------------------------
-        # Update
-        # -------------------------
 
         add_screen(
             "UpdateScreen",
@@ -194,9 +176,7 @@ class FrahooshMobileApp(App):
             "login"
         ):
 
-            manager.current = (
-                "login"
-            )
+            manager.current = "login"
 
         elif manager.screen_names:
 
@@ -230,6 +210,4 @@ class FrahooshMobileApp(App):
 
 if __name__ == "__main__":
 
-    FrahooshMobileApp().run()         
-
-        
+    FrahooshMobileApp().run()                                    
