@@ -125,13 +125,18 @@ class FrahooshMobileApp(App):
                 return True
 
 
-            except Exception as exc:
+        except Exception as exc:
 
-                print(
-                    screen_name.upper(),
-                    "LOAD ERROR:",
-                    repr(exc)
-                )
+            import traceback
+
+            traceback.print_exc()
+
+            print(
+                screen_name.upper(),
+                "LOAD ERROR:",
+                type(exc).__name__,
+                str(exc)
+            )
 
                 return False
 
