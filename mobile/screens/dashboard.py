@@ -79,6 +79,7 @@ ROLE_MENUS = {
         ("ℹ️ درباره فراهوش", "about"),
     ],
 
+
     "admin": [
         ("🏫 مدیریت مدرسه", "management"),
         ("👥 دبیران", "teachers"),
@@ -92,6 +93,7 @@ ROLE_MENUS = {
         ("⚙️ تنظیمات", "settings"),
     ],
 
+
     "educational": [
         ("📚 معاون آموزشی", "educational"),
         ("👨‍🎓 دانش‌آموزان", "students"),
@@ -102,14 +104,6 @@ ROLE_MENUS = {
         ("💻 کلاس‌های آنلاین", "online"),
     ],
 
-    "education": [
-        ("📚 معاون آموزشی", "educational"),
-        ("👨‍🎓 دانش‌آموزان", "students"),
-        ("👥 دبیران", "teachers"),
-        ("📅 برنامه هفتگی", "schedule"),
-        ("📊 وضعیت تحصیلی", "student_info"),
-        ("📈 گزارش‌ها", "reports"),
-    ],
 
     "executive": [
         ("🗂 معاون اجرایی", "executive"),
@@ -120,6 +114,7 @@ ROLE_MENUS = {
         ("⚙️ تنظیمات", "settings"),
     ],
 
+
     "cultural": [
         ("🎯 معاون پرورشی", "cultural"),
         ("👨‍🎓 دانش‌آموزان", "students"),
@@ -128,27 +123,6 @@ ROLE_MENUS = {
         ("📊 گزارش‌ها", "reports"),
     ],
 
-    "training": [
-        ("🎯 معاون پرورشی", "cultural"),
-        ("👨‍🎓 دانش‌آموزان", "students"),
-        ("🖥 تابلو هوشمند", "smart_board"),
-        ("💬 پیام‌ها", "messages"),
-    ],
-
-    "advisor": [
-        ("🧠 مشاوره", "advisor"),
-        ("👨‍🎓 دانش‌آموزان", "students"),
-        ("📊 وضعیت تحصیلی", "student_info"),
-        ("📈 گزارش‌ها", "reports"),
-        ("💬 پیام‌ها", "messages"),
-    ],
-
-    "counselor": [
-        ("🧠 مشاوره", "advisor"),
-        ("👨‍🎓 دانش‌آموزان", "students"),
-        ("📊 وضعیت تحصیلی", "student_info"),
-        ("📈 گزارش‌ها", "reports"),
-    ],
 
     "teacher": [
         ("👨‍🏫 پنل دبیر", "teacher"),
@@ -159,12 +133,6 @@ ROLE_MENUS = {
         ("💬 پیام‌ها", "messages"),
     ],
 
-    "teachers": [
-        ("👨‍🏫 دبیران", "teachers"),
-        ("📅 برنامه هفتگی", "schedule"),
-        ("💻 کلاس‌های آنلاین", "online"),
-        ("💬 پیام‌ها", "messages"),
-    ],
 
     "student": [
         ("👨‍🎓 پنل دانش‌آموز", "student"),
@@ -174,23 +142,9 @@ ROLE_MENUS = {
         ("💬 پیام‌ها", "messages"),
     ],
 
-    "students": [
-        ("👨‍🎓 دانش‌آموزان", "students"),
-        ("📅 برنامه هفتگی", "schedule"),
-        ("📊 وضعیت تحصیلی", "student_info"),
-        ("💻 کلاس آنلاین", "online"),
-    ],
 
     "parent": [
         ("👨‍👩‍👦 پنل اولیا", "parent"),
-        ("📊 وضعیت تحصیلی", "student_info"),
-        ("💳 پرداخت‌ها", "payment"),
-        ("💻 کلاس آنلاین", "online"),
-        ("💬 پیام‌ها", "messages"),
-    ],
-
-    "parents": [
-        ("👨‍👩‍👦 اولیا", "parents"),
         ("📊 وضعیت تحصیلی", "student_info"),
         ("💳 پرداخت‌ها", "payment"),
         ("💻 کلاس آنلاین", "online"),
@@ -237,10 +191,6 @@ class DashboardScreen(Screen):
         root = FloatLayout()
 
 
-        # -------------------------------------------------
-        # Background
-        # -------------------------------------------------
-
         with root.canvas.before:
 
             Color(
@@ -254,6 +204,7 @@ class DashboardScreen(Screen):
                 pos=root.pos,
                 size=root.size,
             )
+
 
         root.bind(
             pos=lambda obj, value:
@@ -272,25 +223,12 @@ class DashboardScreen(Screen):
         )
 
 
-        # -------------------------------------------------
-        # Main container
-        # -------------------------------------------------
-
         main = BoxLayout(
             orientation="vertical",
             spacing=dp(10),
-            padding=[
-                dp(12),
-                dp(12),
-                dp(12),
-                dp(12),
-            ],
+            padding=dp(12),
         )
 
-
-        # -------------------------------------------------
-        # Header
-        # -------------------------------------------------
 
         header = BoxLayout(
             orientation="horizontal",
@@ -316,9 +254,11 @@ class DashboardScreen(Screen):
             width=dp(58),
         )
 
+
         menu_button.bind(
-            on_release=self.toggle_drawer
+            on_release=self.toggle_menu
         )
+
 
         header.add_widget(
             menu_button
@@ -366,10 +306,9 @@ class DashboardScreen(Screen):
             header
         )
 
-
-        # -------------------------------------------------
-        # Welcome card
-        # -------------------------------------------------
+        # =================================================
+        # Welcome Card
+        # =================================================
 
         welcome = BoxLayout(
             orientation="vertical",
@@ -389,7 +328,7 @@ class DashboardScreen(Screen):
                 0.96,
             )
 
-            welcome_rect = RoundedRectangle(
+            self.welcome_rect = RoundedRectangle(
                 radius=[dp(18)],
             )
 
@@ -397,14 +336,14 @@ class DashboardScreen(Screen):
         welcome.bind(
             pos=lambda obj, value:
             setattr(
-                welcome_rect,
+                self.welcome_rect,
                 "pos",
                 value,
             ),
 
             size=lambda obj, value:
             setattr(
-                welcome_rect,
+                self.welcome_rect,
                 "size",
                 value,
             ),
@@ -419,6 +358,7 @@ class DashboardScreen(Screen):
             dp(42),
         )
 
+
         welcome.add_widget(
             self.welcome_label
         )
@@ -432,21 +372,20 @@ class DashboardScreen(Screen):
             dp(30),
         )
 
+
         welcome.add_widget(
             self.role_label
         )
 
 
-        school_label = self._label(
-            SCHOOL_NAME,
-            "12sp",
-            SECONDARY,
-            False,
-            dp(25),
-        )
-
         welcome.add_widget(
-            school_label
+            self._label(
+                SCHOOL_NAME,
+                "12sp",
+                SECONDARY,
+                False,
+                dp(25),
+            )
         )
 
 
@@ -455,9 +394,9 @@ class DashboardScreen(Screen):
         )
 
 
-        # -------------------------------------------------
-        # Content area
-        # -------------------------------------------------
+        # =================================================
+        # Content Area
+        # =================================================
 
         scroll = ScrollView(
             do_scroll_x=False,
@@ -490,14 +429,15 @@ class DashboardScreen(Screen):
             self.content_area
         )
 
+
         main.add_widget(
             scroll
         )
 
 
-        # -------------------------------------------------
+        # =================================================
         # Version
-        # -------------------------------------------------
+        # =================================================
 
         main.add_widget(
             self._label(
@@ -520,11 +460,12 @@ class DashboardScreen(Screen):
         )
 
 
-        # -------------------------------------------------
+        # =================================================
         # Drawer
-        # -------------------------------------------------
+        # =================================================
 
         self.drawer = self._build_drawer()
+
 
         root.add_widget(
             self.drawer
@@ -563,6 +504,7 @@ class DashboardScreen(Screen):
             height=height,
         )
 
+
         label.bind(
             size=lambda obj, value:
             setattr(
@@ -571,6 +513,7 @@ class DashboardScreen(Screen):
                 value,
             )
         )
+
 
         return label
 
@@ -586,16 +529,8 @@ class DashboardScreen(Screen):
             size_hint_x=None,
             width=self.drawer_width,
             size_hint_y=1,
-            pos_hint={
-                "x": -1,
-                "y": 0,
-            },
-            padding=[
-                dp(14),
-                dp(16),
-                dp(14),
-                dp(16),
-            ],
+            x=-self.drawer_width,
+            padding=dp(14),
             spacing=dp(8),
         )
 
@@ -609,7 +544,7 @@ class DashboardScreen(Screen):
                 1,
             )
 
-            drawer_rect = RoundedRectangle(
+            self.drawer_rect = RoundedRectangle(
                 radius=[dp(12)],
             )
 
@@ -617,23 +552,19 @@ class DashboardScreen(Screen):
         drawer.bind(
             pos=lambda obj, value:
             setattr(
-                drawer_rect,
+                self.drawer_rect,
                 "pos",
                 value,
             ),
 
             size=lambda obj, value:
             setattr(
-                drawer_rect,
+                self.drawer_rect,
                 "size",
                 value,
             ),
         )
 
-
-        # -------------------------------------------------
-        # Drawer header
-        # -------------------------------------------------
 
         drawer.add_widget(
             self._label(
@@ -662,10 +593,6 @@ class DashboardScreen(Screen):
         )
 
 
-        # -------------------------------------------------
-        # Menu scroll
-        # -------------------------------------------------
-
         scroll = ScrollView(
             do_scroll_x=False,
             do_scroll_y=True,
@@ -676,12 +603,6 @@ class DashboardScreen(Screen):
             orientation="vertical",
             spacing=dp(7),
             size_hint_y=None,
-            padding=[
-                0,
-                dp(5),
-                0,
-                dp(15),
-            ],
         )
 
 
@@ -708,10 +629,6 @@ class DashboardScreen(Screen):
         )
 
 
-        # -------------------------------------------------
-        # Close button
-        # -------------------------------------------------
-
         close_button = Button(
             text=rtl_text(
                 "بستن منو"
@@ -730,9 +647,9 @@ class DashboardScreen(Screen):
             height=dp(48),
         )
 
+
         close_button.bind(
-            on_release=
-            self.close_drawer
+            on_release=self.close_menu
         )
 
 
@@ -743,41 +660,27 @@ class DashboardScreen(Screen):
 
         return drawer
 
-
     # =====================================================
     # POPULATE MENU
     # =====================================================
 
-    def _populate_menu(
-        self,
-        menu_box,
-    ):
+    def _populate_menu(self, menu_box):
 
         role = self._get_role()
 
         items = ROLE_MENUS.get(
-            role
+            role,
+            ROLE_MENUS["manager"]
         )
-
-
-        if not items:
-
-            items = ROLE_MENUS.get(
-                "manager"
-            )
 
 
         for title, route in items:
 
             button = Button(
-                text=rtl_text(
-                    title
-                ),
+                text=rtl_text(title),
                 font_name=font_name(),
                 font_size="13sp",
                 color=WHITE,
-                halign="right",
-                valign="middle",
                 background_normal="",
                 background_color=(
                     0.07,
@@ -801,8 +704,7 @@ class DashboardScreen(Screen):
 
 
             button.bind(
-                on_release=lambda btn,
-                r=route:
+                on_release=lambda btn, r=route:
                 self._menu_selected(r)
             )
 
@@ -811,623 +713,386 @@ class DashboardScreen(Screen):
                 button
             )
 
-    # ---------------------------------------------------------
-    # Role / User helpers
-    # ---------------------------------------------------------
+
+    # =====================================================
+    # USER HELPERS
+    # =====================================================
 
     def _get_role(self):
-        """
-        دریافت نقش کاربر به شکل امن.
-        """
+
         try:
-            role = getattr(self.app_state, "role", None)
+
+            role = getattr(
+                self.app_state,
+                "role",
+                None
+            )
+
 
             if callable(role):
                 role = role()
 
+
             if role:
-                return str(role).strip().lower()
+                return str(role).lower().strip()
+
 
         except Exception:
             pass
 
+
         return "manager"
 
+
+
     def _get_display_name(self):
-        """
-        دریافت نام نمایشی کاربر.
-        """
+
         try:
-            name = getattr(self.app_state, "display_name", None)
+
+            name = getattr(
+                self.app_state,
+                "display_name",
+                None
+            )
+
 
             if callable(name):
                 name = name()
 
+
             if name:
-                return str(name).strip()
+                return str(name)
+
 
         except Exception:
             pass
 
-        try:
-            profile = getattr(self.app_state, "profile", None)
-
-            if isinstance(profile, dict):
-                for key in (
-                    "full_name",
-                    "display_name",
-                    "name",
-                    "first_name",
-                    "username",
-                ):
-                    value = profile.get(key)
-
-                    if value:
-                        return str(value).strip()
-
-        except Exception:
-            pass
 
         return "کاربر"
 
-    # ---------------------------------------------------------
-    # Drawer control
-    # ---------------------------------------------------------
+
+
+    # =====================================================
+    # DRAWER CONTROL
+    # =====================================================
 
     def _open_drawer(self, *args):
-        """
-        باز کردن منوی کناری.
-        """
+
         if not self.drawer:
             return
+
 
         self.drawer_open = True
 
+
         try:
+
             from kivy.animation import Animation
 
-            target_x = 0
 
             Animation(
-                x=target_x,
-                duration=0.20,
-                t="out_quad",
-            ).start(self.drawer)
+                x=0,
+                duration=0.2,
+            ).start(
+                self.drawer
+            )
+
 
         except Exception:
-            try:
-                self.drawer.x = 0
-            except Exception:
-                pass
+
+            self.drawer.x = 0
+
+
 
     def _close_drawer(self, *args):
-        """
-        بستن منوی کناری.
-        """
+
         if not self.drawer:
             return
 
+
         self.drawer_open = False
 
+
         try:
+
             from kivy.animation import Animation
+
 
             Animation(
                 x=-self.drawer_width,
-                duration=0.20,
-                t="out_quad",
-            ).start(self.drawer)
+                duration=0.2,
+            ).start(
+                self.drawer
+            )
+
 
         except Exception:
-            try:
-                self.drawer.x = -self.drawer_width
-            except Exception:
-                pass
+
+            self.drawer.x = -self.drawer_width
+
+
 
     def _toggle_drawer(self, *args):
-        """
-        باز/بسته کردن منوی کناری.
-        """
+
         if self.drawer_open:
+
             self._close_drawer()
+
         else:
+
             self._open_drawer()
 
-    # ---------------------------------------------------------
-    # Menu navigation
-    # ---------------------------------------------------------
+
+
+    # =====================================================
+    # NAVIGATION
+    # =====================================================
 
     def _menu_selected(self, route):
-        """
-        انتقال از داشبورد به ماژول انتخاب‌شده.
-        """
+
         try:
+
             self._close_drawer()
 
-            manager = self.manager
 
-            if manager is None:
+            if not self.manager:
                 return
 
-            if not hasattr(manager, "has_screen"):
+
+            if not self.manager.has_screen(
+                "module"
+            ):
+
                 return
 
-            if not manager.has_screen("module"):
-                return
 
-            module_screen = manager.get_screen("module")
+            module = self.manager.get_screen(
+                "module"
+            )
 
-            if module_screen is None:
-                return
 
-            if hasattr(module_screen, "set_module"):
-                module_screen.set_module(route)
+            if hasattr(
+                module,
+                "set_module"
+            ):
 
-            elif hasattr(module_screen, "load_module"):
-                module_screen.load_module(route)
+                module.set_module(
+                    route
+                )
 
-            manager.current = "module"
+
+            self.manager.current = "module"
+
+
 
         except Exception as exc:
-            print("Dashboard navigation error:", exc)
 
-            try:
-                self._show_navigation_error(str(exc))
-            except Exception:
-                pass
-
-    def _show_navigation_error(self, message):
-        """
-        نمایش خطای ناوبری بدون کرش برنامه.
-        """
-        try:
-            if self.content_area is None:
-                return
-
-            self.content_area.clear_widgets()
-
-            box = BoxLayout(
-                orientation="vertical",
-                spacing=dp(12),
-                padding=dp(20),
-                size_hint_y=None,
+            print(
+                "Dashboard navigation error:",
+                exc
             )
 
-            box.bind(
-                minimum_height=box.setter("height")
-            )
 
-            title = self._label(
-                "خطا در باز کردن بخش",
-                font_size=20,
-                bold=True,
-                size_hint_y=None,
-                height=dp(45),
-            )
 
-            detail = self._label(
-                "لطفاً دوباره تلاش کنید.",
-                font_size=15,
-                size_hint_y=None,
-                height=dp(70),
-            )
-
-            box.add_widget(title)
-            box.add_widget(detail)
-
-            self.content_area.add_widget(box)
-
-        except Exception as exc:
-            print("Navigation error display failed:", exc)
-
-    # ---------------------------------------------------------
-    # Dashboard content
-    # ---------------------------------------------------------
+    # =====================================================
+    # DASHBOARD CONTENT
+    # =====================================================
 
     def _update_welcome(self):
-        """
-        به‌روزرسانی متن خوش‌آمدگویی و نقش کاربر.
-        """
+
         name = self._get_display_name()
+
         role = self._get_role()
 
-        role_title = ROLE_TITLES.get(
+
+        title = ROLE_TITLES.get(
             role,
-            "کاربر سامانه",
+            "کاربر سامانه"
         )
 
+
         if self.welcome_label:
-            try:
-                self.welcome_label.text = (
-                    f"خوش آمدید {name} عزیز"
-                )
-            except Exception:
-                pass
+
+            self.welcome_label.text = rtl_text(
+                f"خوش آمدید {name} عزیز"
+            )
+
 
         if self.role_label:
-            try:
-                self.role_label.text = role_title
-            except Exception:
-                pass
+
+            self.role_label.text = rtl_text(
+                title
+            )
+
+
 
     def _show_dashboard_home(self):
-        """
-        نمایش صفحه اصلی داشبورد.
-        """
-        if self.content_area is None:
+
+        if not self.content_area:
             return
 
-        try:
-            self.content_area.clear_widgets()
 
-            box = BoxLayout(
-                orientation="vertical",
-                spacing=dp(12),
-                padding=dp(16),
-                size_hint_y=None,
-            )
+        self.content_area.clear_widgets()
 
-            box.bind(
-                minimum_height=box.setter("height")
-            )
 
-            welcome = self._label(
+        self.content_area.add_widget(
+
+            self._label(
                 "به سامانه هوشمند آموزشی یکپارچه فراهوش خوش آمدید",
-                font_size=18,
-                bold=True,
-                size_hint_y=None,
-                height=dp(65),
+                "18sp",
+                PRIMARY,
+                True,
+                dp(70),
             )
 
-            welcome.halign = "right"
-            welcome.valign = "middle"
+        )
 
-            info = self._label(
-                "از منوی کناری، بخش مورد نظر خود را انتخاب کنید.",
-                font_size=15,
-                size_hint_y=None,
-                height=dp(55),
+
+        self.content_area.add_widget(
+
+            self._label(
+                "از منوی کناری بخش مورد نظر را انتخاب کنید.",
+                "14sp",
+                SECONDARY,
+                False,
+                dp(60),
             )
 
-            info.halign = "right"
-            info.valign = "middle"
+        )
 
-            box.add_widget(welcome)
-            box.add_widget(info)
 
-            self.content_area.add_widget(box)
 
-        except Exception as exc:
-            print("Dashboard home error:", exc)
-
-    # ---------------------------------------------------------
-    # Refresh
-    # ---------------------------------------------------------
+    # =====================================================
+    # REFRESH
+    # =====================================================
 
     def refresh(self):
-        """
-        تازه‌سازی کامل داشبورد پس از ورود.
-        """
-        try:
-            self._update_welcome()
 
-            if self.drawer is not None:
-                self._refresh_menu()
+        try:
+
+            self._update_welcome()
 
             self._show_dashboard_home()
 
-        except Exception as exc:
-            print("Dashboard refresh error:", exc)
-
-    def _refresh_menu(self):
-        """
-        بازسازی منوی کناری براساس نقش فعلی.
-        """
-        try:
-            if self.drawer is None:
-                return
-
-            scroll = None
-
-            for child in self.drawer.children:
-                if isinstance(child, ScrollView):
-                    scroll = child
-                    break
-
-            if scroll is None:
-                return
-
-            menu_box = scroll.children[0] if scroll.children else None
-
-            if menu_box is None:
-                return
-
-            menu_box.clear_widgets()
-            self._populate_menu(menu_box)
 
         except Exception as exc:
-            print("Drawer refresh error:", exc)
 
-    # ---------------------------------------------------------
-    # Screen lifecycle
-    # ---------------------------------------------------------
+            print(
+                "Dashboard refresh error:",
+                exc
+            )
+
+
+
+    # =====================================================
+    # SCREEN EVENTS
+    # =====================================================
 
     def on_enter(self, *args):
-        """
-        هنگام ورود به داشبورد.
-        """
-        try:
-            self._update_welcome()
 
-            if self.drawer is not None:
-                try:
-                    self.drawer.x = -self.drawer_width
-                except Exception:
-                    pass
+        try:
+
+            self.refresh()
 
             self.drawer_open = False
 
-            Clock.schedule_once(
-                lambda dt: self.refresh(),
-                0,
-            )
+            if self.drawer:
+
+                self.drawer.x = -self.drawer_width
+
 
         except Exception as exc:
-            print("Dashboard on_enter error:", exc)
+
+            print(
+                "Dashboard enter error:",
+                exc
+            )
+
+
 
     def on_leave(self, *args):
-        """
-        هنگام خروج از داشبورد.
-        """
-        try:
-            self._close_drawer()
-        except Exception:
-            pass
 
-    # ---------------------------------------------------------
-    # Logout
-    # ---------------------------------------------------------
-
-    def _logout(self, *args):
-        """
-        خروج امن از حساب کاربری.
-        """
-        try:
-            self._close_drawer()
-
-            try:
-                if hasattr(self.app_state, "logout"):
-                    self.app_state.logout()
-                elif hasattr(self.app_state, "api"):
-                    api = self.app_state.api
-
-                    if hasattr(api, "sign_out"):
-                        api.sign_out()
-
-            except Exception as exc:
-                print("Logout backend error:", exc)
-
-            manager = self.manager
-
-            if manager is not None and manager.has_screen("login"):
-                manager.current = "login"
-
-        except Exception as exc:
-            print("Dashboard logout error:", exc)
-
-    # ---------------------------------------------------------
-    # Safe button helper
-    # ---------------------------------------------------------
-
-    def _safe_bind(self, widget, event, callback):
-        """
-        اتصال امن callback به ویجت.
-        """
-        try:
-            widget.bind(**{event: callback})
-        except Exception as exc:
-            print("Bind error:", exc)
-
-    # ---------------------------------------------------------
-    # Prevent accidental drawer interaction
-    # ---------------------------------------------------------
-
-    def on_touch_down(self, touch):
-        """
-        مدیریت لمس برای باز و بسته شدن منوی کناری.
-        """
-        try:
-            if self.drawer_open and self.drawer:
-
-                drawer_right = self.drawer.x + self.drawer.width
-
-                # اگر بیرون از منوی کناری لمس شد
-                if touch.x > drawer_right:
-                    self._close_drawer()
-                    return True
-
-        except Exception:
-            pass
-
-        return super().on_touch_down(touch)
-
-    # ---------------------------------------------------------
-    # Utility / UI helpers
-    # ---------------------------------------------------------
-
-    def _label(
-        self,
-        text="",
-        font_size=16,
-        bold=False,
-        **kwargs,
-    ):
-        """
-        ساخت Label با تنظیمات مناسب فارسی.
-        """
-        try:
-            label = Label(
-                text=str(text),
-                font_name=font_name(bold=bold),
-                font_size=font_size,
-                color=WHITE,
-                **kwargs,
-            )
-
-            label.halign = "right"
-            label.valign = "middle"
-
-            try:
-                label.text_size = (
-                    label.width if label.width else None,
-                    None,
-                )
-            except Exception:
-                pass
-
-            return label
-
-        except Exception:
-            return Label(
-                text=str(text),
-                font_size=font_size,
-                color=WHITE,
-                **kwargs,
-            )
-
-    def _show_loading(self):
-        """
-        نمایش وضعیت بارگذاری.
-        """
-        try:
-            if self.content_area is None:
-                return
-
-            self.content_area.clear_widgets()
-
-            loading = self._label(
-                "در حال بارگذاری...",
-                font_size=18,
-                size_hint_y=None,
-                height=dp(60),
-            )
-
-            self.content_area.add_widget(loading)
-
-        except Exception as exc:
-            print("Dashboard loading error:", exc)
-
-    def _show_message(self, message):
-        """
-        نمایش پیام ساده در داشبورد.
-        """
-        try:
-            if self.content_area is None:
-                return
-
-            self.content_area.clear_widgets()
-
-            box = BoxLayout(
-                orientation="vertical",
-                padding=dp(20),
-                spacing=dp(12),
-                size_hint_y=None,
-            )
-
-            box.bind(
-                minimum_height=box.setter("height")
-            )
-
-            label = self._label(
-                message,
-                font_size=16,
-                size_hint_y=None,
-                height=dp(100),
-            )
-
-            box.add_widget(label)
-            self.content_area.add_widget(box)
-
-        except Exception as exc:
-            print("Dashboard message error:", exc)
-
-    # ---------------------------------------------------------
-    # Back handling
-    # ---------------------------------------------------------
-
-    def go_back(self, *args):
-        """
-        بازگشت به داشبورد اصلی.
-        """
-        try:
-            self._close_drawer()
-
-            if self.manager:
-                self.manager.current = "dashboard"
-
-        except Exception as exc:
-            print("Dashboard back error:", exc)
-
-    # ---------------------------------------------------------
-    # Public API
-    # ---------------------------------------------------------
-
-    def open_menu(self, *args):
-        """
-        API عمومی برای باز کردن منو.
-        """
-        self._open_drawer()
-
-    def close_menu(self, *args):
-        """
-        API عمومی برای بستن منو.
-        """
         self._close_drawer()
 
-    def toggle_menu(self, *args):
-        """
-        API عمومی برای تغییر وضعیت منو.
-        """
+
+
+    # =====================================================
+    # LOGOUT
+    # =====================================================
+
+    def _logout(self, *args):
+
+        try:
+
+            self._close_drawer()
+
+
+            if self.app_state:
+
+                if hasattr(
+                    self.app_state,
+                    "logout"
+                ):
+
+                    self.app_state.logout()
+
+
+
+            if self.manager and self.manager.has_screen(
+                "login"
+            ):
+
+                self.manager.current = "login"
+
+
+
+        except Exception as exc:
+
+            print(
+                "Logout error:",
+                exc
+            )
+
+
+
+    # =====================================================
+    # PUBLIC MENU API
+    # =====================================================
+
+    def open_menu(self):
+
+        self._open_drawer()
+
+
+
+    def close_menu(self):
+
+        self._close_drawer()
+
+
+
+    def toggle_menu(self):
+
         self._toggle_drawer()
 
-    # ---------------------------------------------------------
-    # Cleanup
-    # ---------------------------------------------------------
+
+
+    # =====================================================
+    # CLEAR CONTENT
+    # =====================================================
 
     def clear_content(self):
-        """
-        پاک کردن محتوای داخلی داشبورد.
-        """
+
         try:
+
             if self.content_area:
+
                 self.content_area.clear_widgets()
+
+
         except Exception as exc:
-            print("Dashboard clear error:", exc)
 
-    # ---------------------------------------------------------
-    # Error protection
-    # ---------------------------------------------------------
-
-    def _safe_refresh(self, *args):
-        """
-        Refresh محافظت‌شده برای جلوگیری از کرش.
-        """
-        try:
-            self.refresh()
-        except Exception as exc:
-            print("Safe dashboard refresh error:", exc)
-
-    def __del__(self):
-        """
-        جلوگیری از خطا هنگام حذف آبجکت.
-        """
-        try:
-            self.drawer_open = False
-            self.drawer = None
-            self.content_area = None
-            self.welcome_label = None
-            self.role_label = None
-        except Exception:
-            pass
-
-
+            print(
+                "Clear content error:",
+                exc
+            )
