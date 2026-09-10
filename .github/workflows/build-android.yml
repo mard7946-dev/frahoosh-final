@@ -6,268 +6,72 @@ on:
     branches:
       - main
 
+
 jobs:
+
   build:
-    name: Build Frahoosh APK
+
     runs-on: ubuntu-22.04
 
+
     steps:
-      - name: Checkout repository
+
+      - name: Checkout
         uses: actions/checkout@v4
+
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-          cache: "pip"
+          python-version: "3.10"
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "17"
 
-      - name: Install system dependencies
-        shell: bash
+      - name: Install system packages
         run: |
-          set -euxo pipefail
 
-          sudo apt-get update
+          sudo apt update
 
-          sudo apt-get install -y \
+          sudo apt install -y \
             git \
             zip \
             unzip \
-            wget \
-            curl \
+            openjdk-17-jdk \
             autoconf \
-            automake \
             libtool \
             pkg-config \
-            zlib1g-dev \
-            libffi-dev \
-            libssl-dev \
-            build-essential
+            zlib1g-dev
 
-      - name: Install Buildozer
-        shell: bash
+
+      - name: Install build tools
         run: |
-          set -euxo pipefail
 
           python -m pip install --upgrade pip
 
-          python -m pip install \
-            "cython==0.29.36" \
-            "buildozer==1.5.0"
+          pip install \
+            cython==0.29.36 \
+            buildozer==1.5.0
 
-          buildozer --version
-          cython --version
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install Android SDK packages
-        shell: bash
         run: |
-          set -euxo pipefail
 
-          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
-
-          test -n "$SDK"
-
-          SDKMANAGER="$SDK/cmdline-tools/latest/bin/sdkmanager"
-
-          test -x "$SDKMANAGER"
-
-          yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
-
-          "$SDKMANAGER" \
+          yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager \
             "platform-tools" \
-            "platforms;android-35" \
-            "build-tools;35.0.0" \
-            "ndk;28.2.13676358"
+            "platforms;android-34" \
+            "build-tools;34.0.0" \
+            "ndk;25.2.9519653"
 
-          test -x "$SDK/platform-tools/adb"
-          test -x "$SDK/build-tools/35.0.0/aidl"
-          test -x "$SDK/build-tools/35.0.0/aapt"
 
-          test -d "$SDK/platforms/android-35"
-          test -d "$SDK/ndk/28.2.13676358"
-
-          echo "ANDROID_HOME=$SDK" >> "$GITHUB_ENV"
-          echo "ANDROID_SDK_ROOT=$SDK" >> "$GITHUB_ENV"
-          echo "ANDROIDSDK=$SDK" >> "$GITHUB_ENV"
-          echo "ANDROID_NDK_HOME=$SDK/ndk/28.2.13676358" >> "$GITHUB_ENV"
-          echo "ANDROID_NDK_ROOT=$SDK/ndk/28.2.13676358" >> "$GITHUB_ENV"
-
-      - name: Prepare Buildozer SDK bridge
-        shell: bash
+      - name: Build APK
         run: |
-          set -euxo pipefail
-
-          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
-
-          test -n "$SDK"
-
-          BD_ROOT="$HOME/.buildozer/android/platform"
-          BD_SDK="$BD_ROOT/android-sdk"
-
-          mkdir -p "$BD_ROOT"
-
-          rm -rf "$BD_SDK"
-
-          ln -s "$SDK" "$BD_SDK"
-
-          mkdir -p "$SDK/tools/bin"
-
-          ln -sfn \
-            "$SDK/cmdline-tools/latest/bin/sdkmanager" \
-            "$SDK/tools/bin/sdkmanager"
-
-          test -L "$BD_SDK"
-          test -x "$BD_SDK/tools/bin/sdkmanager"
-          test -x "$BD_SDK/platform-tools/adb"
-          test -x "$BD_SDK/build-tools/35.0.0/aidl"
-          test -x "$BD_SDK/build-tools/35.0.0/aapt"
-
-          echo "Buildozer SDK bridge is ready."
-          echo "SDK: $SDK"
-          echo "Buildozer SDK: $BD_SDK"
-
-      - name: Prepare Buildozer configuration
-        shell: bash
-        run: |
-          set -euxo pipefail
-
-          test -f buildozer.spec
-
-          # اجازه می‌دهیم Buildozer در صورت نیاز از sdkmanager استفاده کند.
-          sed -i \
-            '/^[[:space:]]*android\.skip_update[[:space:]]*=/d' \
-            buildozer.spec
-
-          # هماهنگ‌سازی Python requirements
-          sed -i \
-            's/python3==3\.11\.10,hostpython3==3\.11\.10/python3/' \
-            buildozer.spec || true
-
-          sed -i \
-            's/python-bidi==0\.4\.2/python-bidi==0.6.6/' \
-            buildozer.spec || true
-
-          echo "========================================"
-          echo "         BUILDOWER SPEC"
-          echo "========================================"
-
-          cat buildozer.spec
-
-      - name: Validate project files
-        shell: bash
-        run: |
-          set -euxo pipefail
-
-          test -f buildozer.spec
-          test -f main.py
-
-          if [ -f mobile/config.py ]; then
-            echo "mobile/config.py found"
-          fi
-
-          if [ -f requirements.txt ]; then
-            echo "requirements.txt found"
-            cat requirements.txt
-          fi
-
-      - name: Validate Python sources
-        shell: bash
-        run: |
-          set -euxo pipefail
-
-          python -m compileall -q . \
-            -x '(^|/)(\.git|\.buildozer|bin|__pycache__|tests)(/|$)'
-
-      - name: Build Frahoosh APK
-        shell: bash
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-        run: |
-          set -euxo pipefail
-
-          echo "========================================"
-          echo "       BUILDING FRAHOOSH APK"
-          echo "========================================"
-
-          rm -rf bin
 
           buildozer android debug
 
-      - name: Verify APK
-        shell: bash
-        run: |
-          set -euxo pipefail
 
-          echo "========================================"
-          echo "         VERIFY FRAHOOSH APK"
-          echo "========================================"
-
-          test -d bin
-
-          echo "Contents of bin:"
-          ls -lah bin/
-
-          APK_COUNT="$(find bin -maxdepth 1 -type f -name '*.apk' | wc -l)"
-
-          echo "APK COUNT: $APK_COUNT"
-
-          if [ "$APK_COUNT" -eq 0 ]; then
-            echo "ERROR: No APK was generated."
-
-            echo "Build directory contents:"
-
-            find . -maxdepth 4 -type f \
-              \( -name "*.apk" -o -name "*.aab" \) \
-              -print || true
-
-            exit 1
-          fi
-
-          echo "APK SUCCESSFULLY CREATED."
-
-          find bin \
-            -maxdepth 1 \
-            -type f \
-            -name "*.apk" \
-            -print
-
-      - name: Show APK information
-        if: success()
-        shell: bash
-        run: |
-          set -euxo pipefail
-
-          APK="$(find bin -maxdepth 1 -type f -name '*.apk' | head -n 1)"
-
-          test -n "$APK"
-          test -f "$APK"
-
-          echo "========================================"
-          echo "          FRAHOOSH APK READY"
-          echo "========================================"
-
-          echo "APK FILE:"
-          echo "$APK"
-
-          echo "APK SIZE:"
-
-          du -h "$APK"
-
-      - name: Upload APK artifact
-        if: success()
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
+
           name: frahoosh-apk
+
           path: bin/*.apk
-          if-no-files-found: error
-          retention-days: 14         
-          
